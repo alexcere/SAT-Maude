@@ -1,0 +1,57 @@
+sload logic.maude
+
+*** Functional module which contains definitions needed
+*** to produce a conflictive clause from info regarding last
+*** time a decision was made
+
+fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
+
+     *** We define new sorts for storing the info
+     *** we need in order to produce the UIP.
+     *** This info is a list of pairs that stores
+     *** those literals that were propagated after taking the last decision,
+     *** and the clause that produced that propagation.
+     
+     sorts ConflictInfo ConflictInfoSet .
+     subsort ConflictInfo < ConflictInfoSet .
+
+     op emptyCIS : -> ConflictInfoSet .
+
+     op _->_ : Literal Clause -> ConflictInfo [prec 22] .
+     op __ : ConflictInfoSet ConflictInfoSet -> ConflictInfoSet [assoc id: emptyCIS prec 30] .
+
+     var CIS Cis : ConflictInfoSet .
+     var l x y : Literal .
+     var C D : Clause .
+     var M N CTX : Context .
+
+     *** In order to find the UIP, instead of storing the
+     *** level each literal in the context was found, we just
+     *** can count how many literals in a clause are in our conflict structure.
+     
+     op literalsInLevel : ConflictInfoSet Clause -> Nat .
+     
+     eq literalsInLevel(CIS (l -> C) Cis , l \/ D) = 1 + literalsInLevel(CIS Cis, D) .
+     eq literalsInLevel(CIS (l -> C) Cis , ~(l) \/ D) = 1 + literalsInLevel(CIS Cis, D) .
+     eq literalsInLevel(CIS (~(l) -> C) Cis , l \/ D) = 1 + literalsInLevel(CIS Cis, D) .
+     eq literalsInLevel(CIS, C) = 0 [owise] .
+
+     op obtainBackjumpClause : ConflictInfoSet Clause -> Clause .
+
+     *** The backjump clause is reached when we get a clause with only one literal is obtained
+     *** from iteratively applying the binary resolution rule with clauses in
+     *** reverse propagation order and the conflicting clause.
+     
+     ceq obtainBackjumpClause(CIS, C) = C if literalsInLevel(CIS,C) == 1 .
+     eq obtainBackjumpClause(CIS (l -> (C \/ l)) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+     eq obtainBackjumpClause(CIS (~(l) -> (C \/ ~(l))) , l \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+
+     *** The UIP is the literal in the conflict clause that belongs
+     *** to current level. Therefore, it can be found by finding a match
+     *** with the ConflictInfoSet .
+     
+     op obtainUIP : ConflictInfoSet Clause -> Literal .
+
+     eq obtainUIP(CIS (l -> C) Cis, l \/ D) = l .
+
+endfm

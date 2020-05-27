@@ -1,0 +1,60 @@
+sload logic
+
+fmod SCORED-HEURISTIC is
+  pr LOGIC .
+  pr FLOAT .
+
+  sort ScorePair ScorePairList .
+  subsort ScorePair < ScorePairList .
+
+  op emptySPL : -> ScorePairList .
+  
+  op _:|_ : Literal Float -> ScorePair [prec 20].
+  op _,_ : ScorePairList  ScorePairList -> ScorePairList [assoc id: emptySPL prec 30] .
+
+  var N M N1 N2 : Float .
+  var l l1 l2 : Literal .
+  var C : Clause .
+  var CS : ClauseSet .
+  var SPL1 SPL2 SPL3 : ScorePairList .
+
+  eq SPL1 , l : N , SPL2 , l : M, SPL3 = SPL1, l : N , SPL2, SPL3 .
+
+  op obtainLiteralsFromClause : Clause -> ScorePairList .
+
+  eq obtainLiteralsFromClause([]) = emptySPL .
+  eq obtainLiteralsFromClause(l \/ C) = (l :| 0.0) , obtainLiteralsFromClause(C) .
+
+  op obtainInitialScoreList : ClauseSet -> ScorePairList .
+
+  eq obtainInitialScoreList(emptyCS) = emptySPL .
+  eq obtainInitialScoreList(C,CS) = obtainLiteralsFromClause(C) , obtainInitialScoreList(CS) .
+
+  op insertScorePair : ScorePair ScorePairList -> ScorePairList .
+
+  eq insertScorePair(l :| N, emptySPL) = l :| N .
+  ceq insertScorePair(l :| N, (l1 :| N1 , SPL1)) = l :| N , l1 :| N1 , SPL1 if N1 <= N .
+  ceq insertScorePair(l :| N, (SPL1 , l1 :| N1) ) = SPL1 , l1 :| N1 , l :| N if N <= N1 .
+  ceq insertScorePair(l :| N, (SPL1, l1 :| N1 , l2 :| N2, SPL2)) = SPL1 , l1 :| N1, l :| N, l2 :| N2, SPL2 if
+    N <= N1 /\ N2 <= N .
+
+  op modifyScore : Literal Float ScorePairList -> ScorePairList .
+
+  eq modifyScore(l, N, (SPL1, l :| M, SPL2)) = insertScorePair(l :| N, (SPL1, SPL2)) .
+
+  op addScore : Literal Float ScorePairList -> ScorePairList .
+
+  eq addScore(l, N, (SPL1, l :| M, SPL2)) = insertScorePair(l :| (N + M), (SPL1, SPL2)) .
+  
+  *** op sumScore : ScorePairList ScorePairList -> ScorePairList .
+
+  *** eq sumScore(emptySPL, emptySPL) = emptySPL .
+  *** eq sumScore((l : N , SPL) , (SPl, l:M, Spl)) = l : (N + M) , sumScore(SPL, (SPl Spl)) .
+
+
+  *** eq resetScore : ScorePairList -> ScorePairList .
+
+  *** eq resetScore(emptySPL) = emptySPL .
+  *** eq resetScore() = .
+
+endfm

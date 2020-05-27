@@ -1,0 +1,42 @@
+sload watch-literal
+
+mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
+
+  var l x y : Literal .
+  var M N CTX : Context .
+  var C C' D : Clause .
+  var CS : ClauseSet .
+  var WC : WatchedClause .
+  var WCS WCS' : WatchedClauseSet .
+  var cond : Bool .
+
+  crl [WPureLiteral] : M || (l \/ C), CS => M l || CS
+   if (~(l) in CS) =/= true /\ definedLiteral(l,M) =/= true .
+    
+  crl [PreprocessClauseSet] : M || CS => M || WCS if WCS := preprocessWatchedLiterals(CS) .
+
+  rl [WUnitPropagate] :  M || WCS => M x || WCS [nonexec] .
+
+  crl [WUpdateClause] : M || WCS, (~(l) \/ x) : (x \/ C), WCS' => M || WCS, WC, WCS'
+    if cond := M |= C /\ cond =/= true /\ cond =/= false /\
+       WC := changeRepresentative(M,~(l),  (~(l) \/ x) : (x \/ C)) .
+
+  crl [WDecide] : M || WCS, D : (l \/ C), WCS' => M d(l) || WCS, D : (l \/ C), WCS'
+    if definedLiteral(l,M) =/= true .
+
+  crl [WBackjump1] : M d(x) N d(y) CTX || WCS => M d(x) N ~(l) || WCS
+    if existsDecisionLiteral(N) =/= true /\ C := C' \/ l
+      /\ M d(x) N |= C' == false /\ M |= C' =/= false [nonexec]  .
+
+  crl [WBackjump2] : M d(x) N || WCS => M ~(x) || WCS
+    if C := C' \/ l /\ existsDecisionLiteral(M) =/= true
+       /\ M |= C' == false [nonexec] .
+
+  crl [WFail] : M || WCS => failState if existsDecisionLiteral(M) =/= true .
+
+  crl [WLearn] : M || WCS => M || WC , WCS
+    if WC := obtainValidWatchedLiterals(C, M) [nonexec] .
+  
+  rl [WForget] : M || WCS, WC, WCS' => M || WCS, WCS' .
+    
+endm

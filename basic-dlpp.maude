@@ -1,0 +1,65 @@
+sload logic
+
+mod BASIC-DLPP is protecting LOGIC .
+
+        var p : Qid .
+	var l x y : Literal .
+	var M N CTX : Context .
+	var C D Cl : Clause .
+	var F : ClauseSet .
+
+    	crl [UnitPropagate] : M || (l \/ C), F => M l || (l \/ C), F
+	    if M |= C == false /\ definedLiteral(l, M) =/= true .
+
+	crl [PureLiteral] : M || (l \/ C), F => M l || (l \/ C), F 
+	    if (~(l) in F) =/= true /\ definedLiteral(l,M) =/= true .
+ 
+	crl [Decide] : M || (l \/ C),F => M d(l) || (l \/ C),F 
+	    if definedLiteral(l,M) =/= true .
+
+	crl [Fail] : M || F,C => failState if M |= C == false
+	    /\ existsDecisionLiteral(M) =/= true .
+
+	*** In order to guarantee that we backjump to the lowest possible
+	*** level, we are separating Backjump in two rules, separating
+	*** the cases with just one decision clause and the rest.
+
+	*** If we have several decision literals along the context,
+	*** the lowest level we can jump to
+	*** is the one in which next literal is a decision one and
+	*** it is verified that the backjump clause's only free
+	*** literal is the UIP.
+	*** l is the UIP, and Cl is the backjump clause.
+	crl [BackjumpWithSeveralDecisions] : M d(x) N d(y) CTX || F, C
+	    => M d(x) N ~(l) || F,C
+	    if Cl := D \/ l /\ (M d(x) N d(y) CTX) |= C == false
+	    /\ M d(x) N |= D  == false /\ M |= D =/= false [nonexec] .
+
+	*** If only one decision has been taken, we just undo that decision.
+	*** The backjump clause in this case is the literal decision.
+	crl [BackjumpWithOneDecision] : M d(x) N || C,F => M ~(x) || C,F
+	    if M d(x) N |= C == false
+	    /\ existsDecisionLiteral(M) =/= true
+	    /\ existsDecisionLiteral(N) =/= true . 
+endm
+
+mod DLPP-WITH-LEARNING is protecting BASIC-DLPP .
+
+    var M : Context .
+    var C : Clause .
+    var F : ClauseSet .
+    
+    rl [Learn] : M || F => M || F,C [nonexec] .
+
+    rl [Forget] : M || F, C => M || F [nonexec] .
+
+endm
+
+mod MODERN-DLPP is protecting DLPP-WITH-LEARNING .
+
+    var M : Context .
+    var F : ClauseSet .
+
+    rl [Restart] : M || F => emptyCTX || F .
+
+endm

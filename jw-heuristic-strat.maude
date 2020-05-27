@@ -1,0 +1,60 @@
+sload jw-heuristic
+sload watch-literal-dlpp
+sload uip
+
+smod WATCHED-LITERAL-STRATEGY is
+  pr WATCH-LITERAL-DLPP .
+  pr JW-HEURISTIC .
+  pr FLOAT .
+  pr UNIQUE-IMPLICATION-POINT .
+
+  var F : Float .
+  var l x : Literal .
+  var CTX M N M' : Context .
+  var C C' D : Clause .
+  var CS : ClauseSet .
+  var WC : WatchedClause .
+  var WCS WCS' WCS'' : WatchedClauseSet .
+  var SPL SPL' : ScorePairList .
+  var Seq Seq' : WatchedSequent .
+  var Seq'' : BasicSequent .
+  var CIS : ConflictInfoSet .
+
+  strat decide-if-fails : ScorePairList ConflictInfoSet @ WatchedSequent .
+  strat fail-branch : ScorePairList Clause Literal @ WatchedSequent .
+  strat preprocessing : @ BasicSequent .
+  strat conversion-to-watch-literal : ScorePairList @ WatchedSequent .
+  strat decide-literal : ScorePairList ScorePairList @ WatchedSequent .
+  strats propagate propagate-literal : Context ScorePairList ConflictInfoSet @ WatchedSequent .
+
+  sd decide-if-fails(SPL, CIS) := matchrew Seq s.t. (M || WCS, D : C , WCS') := Seq  /\ (M |= C == false) /\ C' :=  obtainBackjumpClause(CIS, C) by Seq using (fail-branch(SPL, C', obtainUIP(CIS, C')) or-else WFail) or-else decide-literal(SPL, SPL) .
+
+  sd fail-branch(SPL,C, l) := (WBackjump1[C <- C, l <- l] or-else WBackjump2) ; WLearn[C <- C] ; decide-literal(SPL, SPL) . 
+
+  *** First, we get rid of clauses that have a literal that can be assumed directly
+  *** to be true because its negated form doesn't appear. Then, we compute the static
+  *** heuristic Jeroslow-Wang.
+  sd preprocessing := WPureLiteral ! ; matchrew Seq'' s.t. M || CS := Seq'' by Seq'' using conversion-to-watch-literal(JWHeuristic(CS)) .
+
+  *** Now we can make the transition to the two-watched clause scheme.
+  sd conversion-to-watch-literal(SPL) := PreprocessClauseSet ; decide-literal(SPL, SPL) .
+
+  *** Ground case: if we don't find any literal to decide, we have reached a solution .
+  sd decide-literal(emptySPL, SPL) := idle .
+
+  *** Recursive case: we try to 'decide' the literal with the biggest score. If we fail, we try
+  *** again with the next literal until we find one literal that fits. Then, we propagate our decision.
+  sd decide-literal( ( l :| F , SPL ) , SPL') := WDecide[l <- l] ? propagate(l, SPL', emptyCIS) : decide-literal(SPL, SPL') .
+
+  *** If there is no literal to propagate, then we analyze if we have reached dead-end.  
+  sd propagate(emptyCTX, SPL, CIS) := decide-if-fails(SPL, CIS) .
+
+  *** In order to propagate, we update the clauses that contain ~(l) as a watched literal,
+  *** but they still have more than one unassigned literal. Then we propagate those clauses
+  *** that have only one unassigned literal, and repeat the process while there are still literals
+  *** to propagate. 
+  sd propagate(l CTX, SPL, CIS) := WUpdateClause[l <- l] ! ; propagate-literal(l CTX, SPL, CIS) .
+
+  sd propagate-literal(l CTX, SPL, CIS) := matchrew Seq s.t. M || WCS', (~(l) \/ x) : (x \/ C) , WCS'' := Seq /\ M |= C == false /\ definedLiteral(x, M) =/= true by Seq using (WUnitPropagate[x <- x] ; propagate-literal(l CTX x, SPL, CIS x -> (x \/ C) )) or-else propagate(CTX, SPL, CIS) .
+  
+endsm

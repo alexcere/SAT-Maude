@@ -1,0 +1,44 @@
+sload logic
+
+fmod WATCH-LITERAL is protecting LOGIC .
+
+     sorts WatchedClause WatchedClauseSet WatchedSequent .
+     subsort WatchedClause < WatchedClauseSet .
+     subsort WatchedSequent < Sequent .
+     
+     op emptyWCS : -> WatchedClauseSet .
+
+     op _:_ : Clause Clause -> WatchedClause [prec 25] .
+     op _,_ : WatchedClauseSet WatchedClauseSet -> WatchedClauseSet [assoc id: emptyWCS prec 30] .
+     op _||_ : Context WatchedClauseSet -> WatchedSequent .
+
+     var x y l : Literal .
+     var C : Clause .
+     var CS Cs : ClauseSet .
+     var M : Context .
+     var FC : WatchedClause .
+     var WCS : WatchedClauseSet .
+
+
+     op preprocessWatchedLiterals : ClauseSet -> WatchedClauseSet .
+     
+     eq preprocessWatchedLiterals(emptyCS) = emptyWCS .
+     eq preprocessWatchedLiterals((x \/ y \/ C), CS) =
+        ((x \/ y) : (C \/ x \/ y)) , preprocessWatchedLiterals(CS) .
+
+     op changeRepresentative : Context Literal WatchedClause -> WatchedClause .
+
+     ceq changeRepresentative(M,l, l \/ x : x \/ y \/ l \/ C) =
+       x \/ y : (x \/ y \/ l \/ C) if definedLiteral(y,M) =/= true .
+
+     op obtainCandidateClauses : Literal WatchedClauseSet -> ClauseSet .
+
+     eq obtainCandidateClauses(l, (~(l) \/ x : C, WCS)) = C, obtainCandidateClauses(l, WCS) .
+     eq obtainCandidateClauses(~(l), (l \/ x : C, WCS)) = C, obtainCandidateClauses(l, WCS) .
+
+     op obtainValidWatchedLiterals : Clause Context -> WatchedClause .
+
+     ceq obtainValidWatchedLiterals(x \/ y \/ C, M) = x \/ y : x \/ y \/ C if ~(x) in M =/= true /\ ~(y) in M =/= true .
+     ceq obtainValidWatchedLiterals(x \/ y \/ C, M) = x \/ y : x \/ y \/ C if ~(x) in M =/= true .
+     
+endfm

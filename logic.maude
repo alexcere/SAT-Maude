@@ -1,0 +1,86 @@
+fmod LOGIC is
+    
+	protecting QID .
+	protecting FLOAT .
+
+	sorts Literal Context Clause ClauseSet BasicSequent Sequent .
+	
+	subsorts Qid < Literal < Context Clause < ClauseSet .
+	subsort BasicSequent < Sequent .
+
+	op emptyCTX : -> Context .
+	op emptyCS : -> ClauseSet .
+	op failState : -> Sequent .
+	op [] : -> Clause .
+	
+	op d : Literal -> Literal .
+	op ~ : Literal -> Literal .
+	
+	op __ : Context Context -> Context [assoc id: emptyCTX prec 30] .
+	op _,_ : ClauseSet ClauseSet -> ClauseSet [assoc comm id: emptyCS prec 30] .
+	op _\/_ : Clause Clause -> Clause [assoc comm id: ([]) prec 20] .
+	
+	op _||_ : Context ClauseSet -> BasicSequent .
+
+	var p : Qid .
+	var l u : Literal .
+	var CTX M N : Context .
+	var C : Clause .
+	var CS : ClauseSet .
+
+	eq ~(~(l)) = l .
+	eq d(d(l)) = d(l) .
+	eq ~(d(l)) = d(~(l)) .
+
+	op _in_ : Literal ClauseSet -> [Bool] .
+	
+	eq l in (l \/ C), CS = true .
+	eq d(l) in (l \/ C), CS = true .
+
+	op _in_ : Literal Context -> [Bool] .
+
+	eq l in M l N = true .
+	eq l in M d(l) N = true .
+
+	eq [contraction] : C,C = C .
+	eq l \/ l \/ C = l \/ C .
+
+	*** Size of a clause
+	op csize : Clause -> Float .
+
+	eq csize([]) = 0.0 .
+	eq csize(l \/ C) = 1.0 + csize(C) .
+	
+
+	*** Entailment operator returns true if a literal from
+	*** the context belongs to the clause, false if all literals
+	*** from the clause appear negated in the context. Otherwise,
+	*** the returned value belongs to the kind of Bool .
+	op _|=_ : Context Clause -> [Bool] .
+	
+	eq CTX |= [] = false .
+	eq M l N |= l \/ C = true .
+	eq M d(l) N |= l \/ C = true .
+	eq M ~(l) N |= l \/ C = M N |= C .
+	eq M l N |= ~(l) \/ C = M N |= C .
+	eq M d(~(l)) N |= l \/ C = M N |= C .
+	eq M d(l) N |= ~(l) \/ C = M N |= C .
+
+	*** A literal z is defined in a context
+	*** if z or ~z appear in the context 
+	op definedLiteral : Literal Context -> [Bool] .
+
+	eq definedLiteral(l, (M l CTX)) = true .
+	eq definedLiteral(l, (M ~(l) CTX)) = true .
+	eq definedLiteral(~(l), (M l CTX)) = true .
+	eq definedLiteral(l, (M d(~(l)) CTX)) = true .
+	eq definedLiteral(~(l), (M d(l) CTX)) = true .
+	eq definedLiteral(l, (M d(l) CTX)) = true .
+
+	*** A decision literal exists in a Context
+	*** if there is some literal of the form d(l)
+	op existsDecisionLiteral : Context -> [Bool] .
+
+	eq existsDecisionLiteral(M d(l) N) = true .
+	
+endfm
