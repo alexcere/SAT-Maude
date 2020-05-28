@@ -18,7 +18,7 @@ fmod SCORED-HEURISTIC is
   var CS : ClauseSet .
   var SPL1 SPL2 SPL3 : ScorePairList .
 
-  eq SPL1 , l : N , SPL2 , l : M, SPL3 = SPL1, l : N , SPL2, SPL3 .
+  eq SPL1 , l :| N , SPL2 , l :| M, SPL3 = SPL1, l :| N , SPL2, SPL3 .
 
   op obtainLiteralsFromClause : Clause -> ScorePairList .
 

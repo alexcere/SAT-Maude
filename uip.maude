@@ -46,12 +46,12 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
      eq obtainBackjumpClause(CIS (l -> (C \/ l)) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) .
      eq obtainBackjumpClause(CIS (~(l) -> (C \/ ~(l))) , l \/ D) = obtainBackjumpClause(CIS, C \/ D) .
 
-     *** The UIP is the literal in the conflict clause that belongs
+     *** The UIP is the literal negated in the conflict clause that belongs
      *** to current level. Therefore, it can be found by finding a match
      *** with the ConflictInfoSet .
      
-     op obtainUIP : ConflictInfoSet Clause -> Literal .
+     op obtainNegatedUIP : ConflictInfoSet Clause -> Literal .
 
-     eq obtainUIP(CIS (l -> C) Cis, l \/ D) = l .
-
+     eq obtainNegatedUIP(CIS (l -> C) Cis, ~(l) \/ D) = ~(l) .
+     eq obtainNegatedUIP(CIS (~(l) -> C) Cis, l \/ D) = l .
 endfm

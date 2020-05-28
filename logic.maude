@@ -82,5 +82,10 @@ fmod LOGIC is
 	op existsDecisionLiteral : Context -> [Bool] .
 
 	eq existsDecisionLiteral(M d(l) N) = true .
+
+	*** Remove a literal that belongs to a clause.
+	op removeLiteralFromClause : Literal Clause -> Clause .
+
+	eq removeLiteralFromClause(l, l \/ C) = C .
 	
 endfm

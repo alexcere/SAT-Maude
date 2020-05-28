@@ -27,14 +27,18 @@ smod WATCHED-LITERAL-STRATEGY is
   strat decide-literal : ScorePairList ScorePairList @ WatchedSequent .
   strats propagate propagate-literal : Context ScorePairList ConflictInfoSet @ WatchedSequent .
 
-  sd decide-if-fails(SPL, CIS) := matchrew Seq s.t. (M || WCS, D : C , WCS') := Seq  /\ (M |= C == false) /\ C' :=  obtainBackjumpClause(CIS, C) by Seq using (fail-branch(SPL, C', obtainUIP(CIS, C')) or-else WFail) or-else decide-literal(SPL, SPL) .
+  sd decide-if-fails(SPL, CIS) := matchrew Seq s.t. (M || WCS, D : C , WCS') := Seq  /\ (M |= C == false) 
+    /\ C' :=  obtainBackjumpClause(CIS, C) by Seq using (fail-branch(SPL, C', obtainNegatedUIP(CIS, C')) 
+    or-else WFail) or-else decide-literal(SPL, SPL) [label dif] .
 
-  sd fail-branch(SPL,C, l) := (WBackjump1[C <- C, l <- l] or-else WBackjump2) ; WLearn[C <- C] ; decide-literal(SPL, SPL) . 
+  sd fail-branch(SPL,C, l) := (WBackjump1[C <- C, l <- l] 
+    or-else WBackjump2) ; WLearn[C <- C] ; decide-literal(SPL, SPL) . 
 
   *** First, we get rid of clauses that have a literal that can be assumed directly
   *** to be true because its negated form doesn't appear. Then, we compute the static
   *** heuristic Jeroslow-Wang.
-  sd preprocessing := WPureLiteral ! ; matchrew Seq'' s.t. M || CS := Seq'' by Seq'' using conversion-to-watch-literal(JWHeuristic(CS)) .
+  sd preprocessing := WPureLiteral ! ; matchrew Seq'' s.t. M || CS := Seq'' by Seq'' 
+    using conversion-to-watch-literal(JWHeuristic(CS)) .
 
   *** Now we can make the transition to the two-watched clause scheme.
   sd conversion-to-watch-literal(SPL) := PreprocessClauseSet ; decide-literal(SPL, SPL) .
@@ -44,17 +48,22 @@ smod WATCHED-LITERAL-STRATEGY is
 
   *** Recursive case: we try to 'decide' the literal with the biggest score. If we fail, we try
   *** again with the next literal until we find one literal that fits. Then, we propagate our decision.
-  sd decide-literal( ( l :| F , SPL ) , SPL') := WDecide[l <- l] ? propagate(l, SPL', emptyCIS) : decide-literal(SPL, SPL') .
+  *** Note that the conflict info set contains l, as it can be potentially our uip
+  sd decide-literal( ( l :| F , SPL ) , SPL') := WDecide[l <- l] ? propagate(l, SPL', l -> []) : 
+    decide-literal(SPL, SPL') .
 
   *** If there is no literal to propagate, then we analyze if we have reached dead-end.  
-  sd propagate(emptyCTX, SPL, CIS) := decide-if-fails(SPL, CIS) .
+  sd propagate(emptyCTX, SPL, CIS) := decide-if-fails(SPL, CIS) [label p1] .
 
   *** In order to propagate, we update the clauses that contain ~(l) as a watched literal,
   *** but they still have more than one unassigned literal. Then we propagate those clauses
   *** that have only one unassigned literal, and repeat the process while there are still literals
   *** to propagate. 
-  sd propagate(l CTX, SPL, CIS) := WUpdateClause[l <- l] ! ; propagate-literal(l CTX, SPL, CIS) .
+  sd propagate(l CTX, SPL, CIS) := WUpdateClause[l <- ~(l)] ! ; propagate-literal(l CTX, SPL, CIS) [label p2] .
 
-  sd propagate-literal(l CTX, SPL, CIS) := matchrew Seq s.t. M || WCS', (~(l) \/ x) : (x \/ C) , WCS'' := Seq /\ M |= C == false /\ definedLiteral(x, M) =/= true by Seq using (WUnitPropagate[x <- x] ; propagate-literal(l CTX x, SPL, CIS x -> (x \/ C) )) or-else propagate(CTX, SPL, CIS) .
+  sd propagate-literal(l CTX, SPL, CIS) := matchrew Seq s.t. M || WCS', (~(l) \/ x) : (x \/ C) , WCS'' := Seq 
+    /\ M |= C == false /\ definedLiteral(x, M) =/= true by Seq using 
+    (WUnitPropagate[x <- x] ; propagate-literal(l CTX x, SPL, CIS x -> (x \/ C) )) 
+    or-else propagate(CTX, SPL, CIS)  [label pl].
   
 endsm
