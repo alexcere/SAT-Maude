@@ -43,8 +43,8 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
      *** reverse propagation order and the conflicting clause.
      
      ceq obtainBackjumpClause(CIS, C) = C if literalsInLevel(CIS,C) == 1 .
-     eq obtainBackjumpClause(CIS (l -> (C \/ l)) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) .
-     eq obtainBackjumpClause(CIS (~(l) -> (C \/ ~(l))) , l \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+     eq obtainBackjumpClause(CIS (l -> (C \/ l) Cis) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+     eq obtainBackjumpClause(CIS (~(l) -> (C \/ ~(l)) Cis) , l \/ D) = obtainBackjumpClause(CIS, C \/ D) .
 
      *** The UIP is the literal negated in the conflict clause that belongs
      *** to current level. Therefore, it can be found by finding a match

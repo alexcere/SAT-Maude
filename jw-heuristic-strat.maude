@@ -49,7 +49,7 @@ smod WATCHED-LITERAL-STRATEGY is
   *** Recursive case: we try to 'decide' the literal with the biggest score. If we fail, we try
   *** again with the next literal until we find one literal that fits. Then, we propagate our decision.
   *** Note that the conflict info set contains l, as it can be potentially our uip
-  sd decide-literal( ( l :| F , SPL ) , SPL') := WDecide[l <- l] ? propagate(l, SPL', l -> []) : 
+  sd decide-literal( ( l :| F , SPL ) , SPL') := WDecide[l <- l] ? propagate(~(l), SPL', l -> []) : 
     decide-literal(SPL, SPL') .
 
   *** If there is no literal to propagate, then we analyze if we have reached dead-end.  
@@ -59,11 +59,11 @@ smod WATCHED-LITERAL-STRATEGY is
   *** but they still have more than one unassigned literal. Then we propagate those clauses
   *** that have only one unassigned literal, and repeat the process while there are still literals
   *** to propagate. 
-  sd propagate(l CTX, SPL, CIS) := WUpdateClause[l <- ~(l)] ! ; propagate-literal(l CTX, SPL, CIS) [label p2] .
+  sd propagate(l CTX, SPL, CIS) := WUpdateClause[l <- l] ! ; propagate-literal(l CTX, SPL, CIS) [label p2] .
 
-  sd propagate-literal(l CTX, SPL, CIS) := matchrew Seq s.t. M || WCS', (~(l) \/ x) : (x \/ C) , WCS'' := Seq 
+  sd propagate-literal(l CTX, SPL, CIS) := matchrew Seq s.t. M || (WCS', (l \/ x) : (x \/ C) , WCS'') := Seq 
     /\ M |= C == false /\ definedLiteral(x, M) =/= true by Seq using 
-    (WUnitPropagate[x <- x] ; propagate-literal(l CTX x, SPL, CIS x -> (x \/ C) )) 
+    (WUnitPropagate[x <- x] ; propagate-literal(l CTX ~(x), SPL, CIS x -> (x \/ C) )) 
     or-else propagate(CTX, SPL, CIS)  [label pl].
   
 endsm
