@@ -1,23 +1,26 @@
 sload logic
+sload uip
 
-mod BASIC-DLPP is protecting LOGIC .
+mod BASIC-DLPP is 
+	pr LOGIC .
+	pr UNIQUE-IMPLICATION-POINT .
 
-        var p : Qid .
+    var p : Qid .
 	var l x y : Literal .
 	var M N CTX : Context .
-	var C D Cl : Clause .
-	var F : ClauseSet .
+	var C C' C'' : Clause .
+	var CS : ClauseSet .
 
-    	crl [UnitPropagate] : M || (l \/ C), F => M l || (l \/ C), F
+    crl [UnitPropagate] : M || (l \/ C), CS => M l || (l \/ C), CS
 	    if M |= C == false /\ definedLiteral(l, M) =/= true .
 
-	crl [PureLiteral] : M || (l \/ C), F => M l || (l \/ C), F 
-	    if (~(l) in F) =/= true /\ definedLiteral(l,M) =/= true .
+	crl [PureLiteral] : M || (l \/ C), CS => M l || (l \/ C), CS 
+	    if (~(l) in CS) =/= true /\ definedLiteral(l,M) =/= true .
  
-	crl [Decide] : M || (l \/ C),F => M d(l) || (l \/ C),F 
+	crl [Decide] : M || (l \/ C),CS => M d(l) || (l \/ C),CS 
 	    if definedLiteral(l,M) =/= true .
 
-	crl [Fail] : M || F,C => failState if M |= C == false
+	crl [Fail] : M || CS,C => failState if M |= C == false
 	    /\ existsDecisionLiteral(M) =/= true .
 
 	*** In order to guarantee that we backjump to the lowest possible
@@ -29,37 +32,37 @@ mod BASIC-DLPP is protecting LOGIC .
 	*** is the one in which next literal is a decision one and
 	*** it is verified that the backjump clause's only free
 	*** literal is the UIP.
-	*** l is the UIP, and Cl is the backjump clause.
-	crl [BackjumpWithSeveralDecisions] : M d(x) N d(y) CTX || F, C
-	    => M d(x) N ~(l) || F,C
-	    if Cl := D \/ l /\ (M d(x) N d(y) CTX) |= C == false
-	    /\ M d(x) N |= D  == false /\ M |= D =/= false [nonexec] .
+	*** l is the negated UIP, and C' is the backjump clause.
+	crl [BackjumpWithSeveralDecisions] : M d(x) N d(y) CTX || CS, C
+	    => M d(x) N l || CS,C
+	    if (M d(x) N d(y) CTX) |= C == false /\ existsDecisionLiteral(N) =/= true 
+		/\ C'' := removeLiteralFromClause(l, C')
+	    /\ M d(x) N |= C''  == false /\ M |= C'' =/= false [nonexec] .
 
 	*** If only one decision has been taken, we just undo that decision.
 	*** The backjump clause in this case is the literal decision.
-	crl [BackjumpWithOneDecision] : M d(x) N || C,F => M ~(x) || C,F
+	crl [BackjumpWithOneDecision] : M d(x) N || C,CS => M ~(x) || C,CS
 	    if M d(x) N |= C == false
-	    /\ existsDecisionLiteral(M) =/= true
-	    /\ existsDecisionLiteral(N) =/= true . 
+	    /\ existsDecisionLiteral(M) =/= true . 
 endm
 
 mod DLPP-WITH-LEARNING is protecting BASIC-DLPP .
 
     var M : Context .
     var C : Clause .
-    var F : ClauseSet .
+    var CS : ClauseSet .
     
-    rl [Learn] : M || F => M || F,C [nonexec] .
+    rl [Learn] : M || CS => M || CS,C [nonexec] .
 
-    rl [Forget] : M || F, C => M || F [nonexec] .
+    rl [Forget] : M || CS, C => M || CS [nonexec] .
 
 endm
 
 mod MODERN-DLPP is protecting DLPP-WITH-LEARNING .
 
     var M : Context .
-    var F : ClauseSet .
+    var CS : ClauseSet .
 
-    rl [Restart] : M || F => emptyCTX || F .
+    rl [Restart] : M || CS => emptyCTX || CS .
 
 endm

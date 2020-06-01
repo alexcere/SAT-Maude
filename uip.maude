@@ -22,7 +22,7 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
 
      var CIS Cis : ConflictInfoSet .
      var l x y : Literal .
-     var C D : Clause .
+     var C C' D : Clause .
      var M N CTX : Context .
 
      *** In order to find the UIP, instead of storing the
@@ -34,17 +34,19 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
      eq literalsInLevel(CIS (l -> C) Cis , l \/ D) = 1 + literalsInLevel(CIS Cis, D) .
      eq literalsInLevel(CIS (l -> C) Cis , ~(l) \/ D) = 1 + literalsInLevel(CIS Cis, D) .
      eq literalsInLevel(CIS (~(l) -> C) Cis , l \/ D) = 1 + literalsInLevel(CIS Cis, D) .
-     eq literalsInLevel(CIS, C) = 0 [owise] .
+     eq literalsInLevel(CIS, C) = 0 [owise] . 
 
-     op obtainBackjumpClause : ConflictInfoSet Clause -> Clause .
 
      *** The backjump clause is reached when we get a clause with only one literal is obtained
      *** from iteratively applying the binary resolution rule with clauses in
      *** reverse propagation order and the conflicting clause.
+
+     op obtainBackjumpClause : ConflictInfoSet Clause -> Clause .
      
      ceq obtainBackjumpClause(CIS, C) = C if literalsInLevel(CIS,C) == 1 .
-     eq obtainBackjumpClause(CIS (l -> (C \/ l) Cis) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) .
-     eq obtainBackjumpClause(CIS (~(l) -> (C \/ ~(l)) Cis) , l \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+     eq obtainBackjumpClause(CIS l -> (C \/ l) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+     eq obtainBackjumpClause(CIS ~(l) -> (C \/ ~(l)), l \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+     eq obtainBackjumpClause(CIS l -> C, D) = obtainBackjumpClause(CIS, D) [owise] .
 
      *** The UIP is the literal negated in the conflict clause that belongs
      *** to current level. Therefore, it can be found by finding a match
@@ -54,4 +56,20 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
 
      eq obtainNegatedUIP(CIS (l -> C) Cis, ~(l) \/ D) = ~(l) .
      eq obtainNegatedUIP(CIS (~(l) -> C) Cis, l \/ D) = l .
+
+
+     *** Obtain ConflictInfoSet corresponding to current level (i.e the beginning of
+     *** the ConflictInfoSet corresponds to the last decision literal)
+     op obtainCurrentConflictInfoSet : Context ConflictInfoSet -> ConflictInfoSet .
+
+     ceq obtainCurrentConflictInfoSet(M d(l) N, CIS (l -> C) Cis) = (l -> C) Cis if existsDecisionLiteral(N) =/= true .
+
+
+     *** When we perform a backjump, we retrieve ConflictInfoSet up to previous literal
+     *** and add the information generated from the negated UIP
+     op generateConflictInfoSetFromBackjump : Context ConflictInfoSet Clause -> ConflictInfoSet .
+
+     eq generateConflictInfoSetFromBackjump(M x l, CIS (x -> C) Cis, C') = CIS (x -> C) (l -> C') .
+     eq generateConflictInfoSetFromBackjump(M d(x) l, CIS (x -> C) Cis, C') = CIS (x -> C) (l -> C') .
+
 endfm

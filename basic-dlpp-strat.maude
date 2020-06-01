@@ -1,0 +1,38 @@
+sload basic-dlpp
+sload uip 
+
+smod BASIC-DLPP-STRATEGY is 
+    pr DLPP-WITH-LEARNING .
+    pr UNIQUE-IMPLICATION-POINT .
+
+    var l x : Literal .
+    var C C' : Clause .
+    var CS CS' : ClauseSet .
+    var Seq Seq' : BasicSequent .
+    var M CTX N : Context .
+    var CIS CIS' : ConflictInfoSet .
+
+    strat basic-strat :   @ BasicSequent .
+    strats decide-if-fails propagate success-branch : ConflictInfoSet @ BasicSequent .
+    strat fail-branch : Literal Clause Clause ConflictInfoSet @ BasicSequent .
+
+    sd fail-branch(l, C, C', CIS) :=  (BackjumpWithSeveralDecisions[l <- l, C <- C, C' <- C'] or-else 
+        BackjumpWithOneDecision[C <- C]) ? (Learn[C <- C'] ; 
+        matchrew Seq s.t. (M || CS) := Seq /\ CIS' := generateConflictInfoSetFromBackjump(M, CIS, C') 
+        by Seq using propagate(CIS')) : Fail [label fb] .
+
+    sd decide-if-fails(CIS) := matchrew Seq s.t. (M || C, CS) := Seq  /\ (M |= C == false)
+        /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
+        /\ C' :=  obtainBackjumpClause(CIS', C) /\ l := obtainNegatedUIP(CIS', C')  
+        by Seq using (fail-branch(l, C, C', CIS)) or-else success-branch(CIS) [label dif] .
+
+    sd propagate(CIS) := (matchrew Seq s.t. CTX || (l \/ C), CS := Seq 
+        /\ CTX |= C == false /\ definedLiteral(l, CTX) =/= true /\  CIS' := CIS l -> (l \/ C) 
+        by Seq using (UnitPropagate[l <- l, C <- C]; propagate(CIS'))) or-else decide-if-fails(CIS) [label pro] .
+
+    sd success-branch(CIS) := one(Decide) ? matchrew Seq' s.t. (N d(l) || CS) := Seq' /\ CIS' := (CIS l -> []) by Seq'
+        using (propagate(CIS')) : idle [label suc] .
+
+    sd basic-strat := PureLiteral ! ; propagate(emptyCIS) .
+     
+endsm

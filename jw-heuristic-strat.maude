@@ -21,18 +21,18 @@ smod WATCHED-LITERAL-STRATEGY is
   var CIS : ConflictInfoSet .
 
   strat decide-if-fails : ScorePairList ConflictInfoSet @ WatchedSequent .
-  strat fail-branch : ScorePairList Clause Literal @ WatchedSequent .
+  strat fail-branch : ScorePairList Clause Literal ConflictInfoSet @ WatchedSequent .
   strat preprocessing : @ BasicSequent .
   strat conversion-to-watch-literal : ScorePairList @ WatchedSequent .
   strat decide-literal : ScorePairList ScorePairList @ WatchedSequent .
   strats propagate propagate-literal : Context ScorePairList ConflictInfoSet @ WatchedSequent .
 
   sd decide-if-fails(SPL, CIS) := matchrew Seq s.t. (M || WCS, D : C , WCS') := Seq  /\ (M |= C == false) 
-    /\ C' :=  obtainBackjumpClause(CIS, C) by Seq using (fail-branch(SPL, C', obtainNegatedUIP(CIS, C')) 
+    /\ C' :=  obtainBackjumpClause(CIS, C) by Seq using (fail-branch(SPL, C', obtainNegatedUIP(CIS, C'), CIS) 
     or-else WFail) or-else decide-literal(SPL, SPL) [label dif] .
 
-  sd fail-branch(SPL,C, l) := (WBackjump1[C <- C, l <- l] 
-    or-else WBackjump2) ; WLearn[C <- C] ; decide-literal(SPL, SPL) . 
+  sd fail-branch(SPL,C, l, CIS) := (WBackjump1[C <- C, l <- l] 
+    or-else WBackjump2) ; WLearn[C <- C] ; decide-if-fails(SPL, CIS) [label fb] . 
 
   *** First, we get rid of clauses that have a literal that can be assumed directly
   *** to be true because its negated form doesn't appear. Then, we compute the static
