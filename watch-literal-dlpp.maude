@@ -25,8 +25,8 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
   crl [WUpdateClause] : M || WCS, C' : C , WCS' => M || WCS, WC, WCS'
     if C'' : C := WC  [nonexec] .
 
-  crl [WDecide] : M || WCS , C' : (l \/ C) , WCS' => M d(l) || WCS , C' : (l \/ C),  WCS'
-    if definedLiteral(l,M) =/= true .
+  crl [WDecide] : M || WCS => M d(l) || WCS
+    if definedLiteral(l,M) =/= true [nonexec] .
 
   crl [WBackjump1] : M d(x) N d(y) CTX || WCS => M d(x) N l || WCS
     if existsDecisionLiteral(N) =/= true /\ C' := removeLiteralFromClause(l, C)
