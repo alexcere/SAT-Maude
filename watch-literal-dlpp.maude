@@ -4,35 +4,35 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
 
   var l x y : Literal .
   var M N CTX : Context .
-  var C C' D : Clause .
+  var C C' C'' : Clause .
   var CS : ClauseSet .
   var WC : WatchedClause .
   var WCS WCS' : WatchedClauseSet .
   var cond : Bool .
 
-  crl [WPureLiteral] : M || (l \/ C), CS => M l || CS
-   if (~(l) in CS) =/= true /\ definedLiteral(l,M) =/= true .
-    
+  *** Preprocessing: remove those clauses that contain
+  *** literals that are directly satisfied as no negation appears in any
+  *** other clause.
+  crl [WPureLiteral] : M || (l \/ C), CS => M || CS
+   if (~(l) in CS) =/= true /\ definedLiteral(l,M) =/= true .  
+  
+
   crl [PreprocessClauseSet] : M || CS => M || WCS if WCS := preprocessWatchedLiterals(CS)  .
 
-  rl [WUnitPropagate] :  M || WCS => M x || WCS [nonexec] .
+  crl [WUnitPropagate] :  M || WCS => M x || WCS 
+    if definedLiteral(x,M) =/= true [nonexec] .
 
-  crl [WUpdateClause] : M || WCS, (l \/ x) : (x \/ C), WCS' => M || WCS, WC, WCS'
-    if M |= C =/= true /\ M |= C =/= false /\
-       WC := changeRepresentative(M, l,  (l \/ x) : (x \/ C)) .
+  crl [WUpdateClause] : M || WCS, C' : C , WCS' => M || WCS, WC, WCS'
+    if C'' : C := WC  [nonexec] .
 
-  crl [WDecide] : M || WCS, D : (l \/ C), WCS' => M d(l) || WCS, D : (l \/ C), WCS'
+  crl [WDecide] : M || WCS , C' : (l \/ C) , WCS' => M d(l) || WCS , C' : (l \/ C),  WCS'
     if definedLiteral(l,M) =/= true .
 
   crl [WBackjump1] : M d(x) N d(y) CTX || WCS => M d(x) N l || WCS
     if existsDecisionLiteral(N) =/= true /\ C' := removeLiteralFromClause(l, C)
       /\ M d(x) N |= C' == false /\ M |= C' =/= false [nonexec]  .
 
-  *** crl [WBackjump2] : M d(x) N || WCS => M ~(x) || WCS
-  ***  if C' := removeLiteralFromClause(l,C) /\ existsDecisionLiteral(M) =/= true
-  ***     /\ M |= C' == false [nonexec] .
-
-  rl [WBackjump2] : M d(x) N || WCS => M ~(x) || WCS .
+  crl [WBackjump2] : M d(x) N || WCS => M ~(x) || WCS if existsDecisionLiteral(M) =/= true .
 
   crl [WFail] : M || WCS => failState if existsDecisionLiteral(M) =/= true .
 
@@ -40,5 +40,8 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
     if WC := obtainValidWatchedLiterals(C, M) [nonexec] .
   
   rl [WForget] : M || WCS, WC, WCS' => M || WCS, WCS' .
+
+  rl [WRestart] : M || WCS => emptyCTX || WCS .
     
+
 endm

@@ -1,0 +1,56 @@
+sload watch-literal-dlpp
+sload uip 
+
+smod WATCH-LITERAL-DLPP-STRATEGY is 
+    pr WATCH-LITERAL-DLPP .
+    pr UNIQUE-IMPLICATION-POINT .
+
+    var l x y : Literal .
+    var C C' : Clause .
+    var M CTX N : Context .
+    var CS : ClauseSet .
+    var WC WC' : WatchedClause .
+    var WCS WCS' : WatchedClauseSet .
+    var Seq Seq' : WatchedSequent .
+    var CIS CIS' : ConflictInfoSet .
+
+    strat watch-literal-strat :   @ BasicSequent .
+    strat fail-branch : Literal Clause ConflictInfoSet @ WatchedSequent .
+    strat propagate : Context ConflictInfoSet ClauseSet @ WatchedSequent .
+    strat generate-failure-info : ConflictInfoSet Clause @ WatchedSequent .
+    strat success-branch : ConflictInfoSet @ WatchedSequent .
+    strat select-clauses : Context ConflictInfoSet @ WatchedSequent .
+
+    sd fail-branch(l, C, CIS) :=  (WBackjump1[l <- l, C <- C] or-else 
+        WBackjump2) ? (WLearn[C <- C] ; 
+        matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, C) 
+        by Seq using select-clauses(y, CIS')) : WFail [label fb] .
+
+    sd generate-failure-info(CIS, C) := matchrew Seq s.t. (M || WCS) := Seq 
+        /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
+        /\ C' :=  obtainBackjumpClause(CIS', C) /\ l := obtainNegatedUIP(CIS', C')  
+        by Seq using (fail-branch(l, C', CIS)) .
+  
+    sd propagate(l CTX, CIS, emptyCS) := select-clauses(CTX, CIS) .
+
+    sd propagate(l CTX, CIS, (C, CS)) := (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M =/= true /\
+        x in M =/= true /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ CIS' := (CIS x -> C) /\ y := ~(x)
+        by Seq using
+        ((WUpdateClause[C <- C, WC <- WC] ; propagate(l CTX, CIS, CS)) or-else 
+        (WUnitPropagate[x <- x] ; propagate(l CTX y, CIS', CS)) or-else 
+        generate-failure-info(CIS, C) )) 
+        or-else propagate(l CTX, CIS, CS) . 
+
+    sd select-clauses(emptyCTX, CIS) := success-branch(CIS) .
+
+    sd select-clauses(l CTX, CIS) := (matchrew Seq s.t. M || WCS := Seq /\ CS := obtainCandidateClauses(l, WCS) 
+        by Seq using propagate(l CTX, CIS, CS)) .
+        
+
+    sd success-branch(CIS) := one(WDecide) ? matchrew Seq s.t. (N d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 
+        /\ x := ~(l) by Seq using (select-clauses(x, CIS')) : idle [label suc] .
+
+    sd watch-literal-strat := WPureLiteral ! ; PreprocessClauseSet ; success-branch(emptyCIS) .
+     
+endsm
