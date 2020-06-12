@@ -1,0 +1,95 @@
+sload watch-literal-dlpp
+sload uip 
+sload vsids-heuristic
+
+smod VSIDS-HEURISTIC-STRATEGY is 
+    pr WATCH-LITERAL-DLPP .
+    pr UNIQUE-IMPLICATION-POINT .
+    pr VSIDS-HEURISTIC .
+    pr FLOAT .
+    pr NAT .
+
+    var N : Nat .
+    var F : Float .
+    var l x y : Literal .
+    var C C' : Clause .
+    var M CTX : Context .
+    var ScoredLiterals CurrentLiterals NewScoredLiterals : ScorePairList .
+    var CS : ClauseSet .
+    var WC WC' : WatchedClause .
+    var WCS WCS' : WatchedClauseSet .
+    var Seq : WatchedSequent .
+    var Seq' : BasicSequent .
+    var CIS CIS' : ConflictInfoSet .
+
+    strat vsids-heuristic-strat :  @ BasicSequent .
+    strat fail-branch : Literal Clause ConflictInfoSet ScorePairList ScorePairList Nat @ WatchedSequent .
+    strat propagate : Context ConflictInfoSet ClauseSet ScorePairList ScorePairList Nat @ WatchedSequent .
+    strats success-branch generate-failure-info decide-if-sum-decay decide-literal : 
+        ConflictInfoSet ScorePairList ScorePairList Nat @ WatchedSequent .
+    strat generate-failure-info : ConflictInfoSet Clause ScorePairList ScorePairList Nat @ WatchedSequent .
+    strat select-clauses : Context ConflictInfoSet ScorePairList ScorePairList Nat @ WatchedSequent .
+    strat convert-watch-literal : ScorePairList @ BasicSequent .
+
+    sd fail-branch(l, C, CIS, CurrentLiterals, ScoredLiterals, N) :=  
+        (WBackjump1[l <- l, C <- C] or-else 
+        WBackjump2) ? (WLearn[C <- C] ; 
+        matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, C) 
+        /\ NewScoredLiterals := updateClauseScore(C, ScoredLiterals, 1.0) by Seq using 
+        select-clauses(y, CIS', NewScoredLiterals, NewScoredLiterals, N)) : WFail .
+
+    sd generate-failure-info(CIS, C, CurrentLiterals, ScoredLiterals, N) 
+        := matchrew Seq s.t. (M || WCS) := Seq 
+        /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
+        /\ C' :=  obtainBackjumpClause(CIS', C) /\ l := obtainNegatedUIP(CIS', C')  
+        by Seq using (fail-branch(l, C', CIS, CurrentLiterals, ScoredLiterals, N)) .
+  
+    sd propagate(l CTX, CIS, emptyCS, CurrentLiterals, ScoredLiterals, N) := 
+        select-clauses(CTX, CIS, CurrentLiterals, ScoredLiterals, N) .
+
+    sd propagate(l CTX, CIS, (C, CS), CurrentLiterals, ScoredLiterals, N) := 
+        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M =/= true /\
+        x in M =/= true /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
+        CIS' := (CIS x -> C) /\ y := ~(x) 
+        by Seq using
+        ((WUpdateClause[C <- C, WC <- WC] ; 
+        propagate(l CTX, CIS, CS, CurrentLiterals, ScoredLiterals, N)) 
+        or-else (WUnitPropagate[x <- x] ; 
+        propagate(l CTX y, CIS', CS, CurrentLiterals, ScoredLiterals, N)) or-else 
+        generate-failure-info(CIS, C, CurrentLiterals, ScoredLiterals, N))) 
+        or-else propagate(l CTX, CIS, CS, CurrentLiterals, ScoredLiterals, N) . 
+
+    sd select-clauses(emptyCTX, CIS, CurrentLiterals, ScoredLiterals, N) := 
+        decide-literal(CIS, CurrentLiterals, ScoredLiterals, N) .
+
+    sd select-clauses(l CTX, CIS, CurrentLiterals, ScoredLiterals, N) := 
+        matchrew Seq s.t. M || WCS := Seq /\ CS := obtainCandidateClauses(l, WCS) 
+        by Seq using propagate(l CTX, CIS, CS, CurrentLiterals, ScoredLiterals, N) .
+    
+    sd decide-if-sum-decay(CIS, CurrentLiterals, ScoredLiterals, 100) :=
+        matchrew Seq s.t. M || WCS := Seq /\ NewScoredLiterals := decaySum(ScoredLiterals)
+        by Seq using success-branch(CIS, NewScoredLiterals, NewScoredLiterals, 0) .
+        
+    sd decide-if-sum-decay(CIS, CurrentLiterals, ScoredLiterals, N) :=
+        success-branch(CIS, CurrentLiterals, ScoredLiterals, N + 1) . 
+
+    sd decide-literal(CIS, emptySPL, ScoredLiterals, N) := idle .
+
+    sd decide-literal(CIS, (l :| F , CurrentLiterals), ScoredLiterals, N) := 
+        WDecide[l <- l] ?  decide-if-sum-decay(CIS, CurrentLiterals, ScoredLiterals, N) :
+        decide-literal(CIS, CurrentLiterals, ScoredLiterals, N) .
+
+    sd success-branch(CIS, CurrentLiterals, ScoredLiterals, N) :=  
+        matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) /\ x := ~(l) 
+        by Seq using 
+        select-clauses(x, CIS', CurrentLiterals, ScoredLiterals, N) .
+
+    sd convert-watch-literal(ScoredLiterals) := PreprocessClauseSet ; 
+        decide-literal(emptyCIS, ScoredLiterals, ScoredLiterals, 0) .
+
+    sd vsids-heuristic-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
+        ScoredLiterals := initializeVSIDS(CS)  
+        by Seq' using convert-watch-literal(ScoredLiterals) .
+     
+endsm

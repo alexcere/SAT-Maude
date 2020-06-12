@@ -1,0 +1,18 @@
+sload scored-heuristic
+
+fmod VSIDS-HEURISTIC is
+  protecting SCORED-HEURISTIC .
+  protecting FLOAT .
+
+  var CS : ClauseSet .
+  var SPL : ScorePairList .
+
+  op decaySum : ScorePairList -> ScorePairList .
+
+  eq decaySum(SPL) = divideScorePairList(SPL, 2.0) .
+
+  op initializeVSIDS : ClauseSet -> ScorePairList .
+
+  eq initializeVSIDS(CS) = updateClauseSetScore(CS, obtainInitialScoreList(CS), 1.0) .
+
+endfm

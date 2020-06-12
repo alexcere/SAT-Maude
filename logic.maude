@@ -50,6 +50,13 @@ fmod LOGIC is
 
 	eq csize([]) = 0.0 .
 	eq csize(l \/ C) = 1.0 + csize(C) .
+
+	*** Size of a set of clauses
+
+	op cssize : ClauseSet -> Nat .
+
+	eq cssize(emptyCS) = 0 .
+	eq cssize(C, CS) = 1 + cssize(CS) .
 	
 
 	*** Entailment operator returns true if a literal from
@@ -87,5 +94,14 @@ fmod LOGIC is
 	op removeLiteralFromClause : Literal Clause -> Clause .
 
 	eq removeLiteralFromClause(l, l \/ C) = C .
+
+	*** Given a clause that contain several literals, we obtain
+  	*** its representation with variables instead: we change each negated
+  	*** literal ~l for l
+  	op obtainVariablesInClause : Clause -> Clause .
+
+  	eq obtainVariablesInClause([]) = [] .
+	eq obtainVariablesInClause(~(l) \/ C) = l \/ obtainVariablesInClause(C) .
+	eq obtainVariablesInClause(l \/ C) = l \/ obtainVariablesInClause(C) .
 	
 endfm

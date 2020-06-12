@@ -1,0 +1,61 @@
+sload scored-heuristic
+sload uip
+sload watch-literal
+
+fmod BERKMIN-HEURISTIC is
+  pr SCORED-HEURISTIC .
+  pr FLOAT .
+  pr UNIQUE-IMPLICATION-POINT .
+
+  sort BerkminInfo .
+
+  op <_,_,_,_,_,_,_> -> BerkminInfo .
+
+  var F : Float .
+  var l : Literal .
+  var C1 C2 C3 C4 : Clause .
+  var CS : ClauseSet .
+  var CIS : ConflictInfoSet .
+  var SPL : ScorePairList .
+
+  op decaySumBerkmin : ScorePairList -> ScorePairList .
+
+  eq decaySumBerkmin(SPL) = divideScorePairList(SPL, 4.0) .
+
+  op initializeBerkmin : ClauseSet -> ScorePairList .
+
+  eq initializeBerkmin(CS) = updateClauseSetScore(CS, obtainInitialScoreList(CS), 1.0) .
+
+  op obtainIntermediateClausesBackjumping : ConflictInfoSet ClauseSet Clause Clause -> ClauseSet .
+
+  eq obtainIntermediateClausesBackjumping(CIS, CS, C1, C1) = CS .
+
+  ceq obtainIntermediateClausesBackjumping(CIS l -> (C1 \/ l) , CS, ~(l) \/ C2, C3) = 
+    obtainIntermediateClausesBackjumping(CIS, (C4, CS), C4 , C3) if C4 := C1 \/ C2 .
+
+  ceq obtainIntermediateClausesBackjumping(CIS ~(l) -> (C1 \/ ~(l)), CS, l \/ C2, C3) = 
+    obtainIntermediateClausesBackjumping(CIS, (C4, CS), C4 , C3) if C4 := C1 \/ C2 .
+
+  eq obtainIntermediateClausesBackjumping(CIS l -> C1, CS, C2, C3) = 
+    obtainIntermediateClausesBackjumping(CIS, CS, C2, C3) [owise] .
+
+  op updateScoreBackjumpingBerkmin : ScorePairList ConflictInfoSet Clause Clause -> ScorePairList . 
+
+  eq updateScoreBackjumpingBerkmin(SPL, CIS, C1, C2) = 
+    updateClauseSetScore(obtainIntermediateClausesBackjumping(CIS, emptyCS, C1, C2), SPL, 1.0) .
+
+  op obtainMostRecentNonSatisfiedWatchedClause : Context WatchedClauseSet -> WatchedClause .
+
+  ceq obtainMostRecentNonSatisfiedWatchedClause(M, (x \/ y : C, WCS)) = 
+    obtainMostRecentNonSatisfiedWatchedClause(M, WCS) if (x in M) \/ (y in M) \/ M |= C .
+  eq obtainMostRecentNonSatisfiedWatchedClause(M, (x \/ y : C, WCS)) = x \/ y : C [owise] .
+
+  op initializeVarActivity :  .
+
+  op initializeLitActivity :  .
+
+  op initializeNbTwo : .
+
+  op 
+
+endfm

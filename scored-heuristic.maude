@@ -16,7 +16,7 @@ fmod SCORED-HEURISTIC is
   var l l1 l2 : Literal .
   var C : Clause .
   var CS : ClauseSet .
-  var SPL1 SPL2 SPL3 : ScorePairList .
+  var SPL1 SPL1' SPL2 SPL2' SPL3 : ScorePairList .
 
   eq SPL1 , l :| N , SPL2 , l :| M, SPL3 = SPL1, l :| N , SPL2, SPL3 .
 
@@ -45,16 +45,26 @@ fmod SCORED-HEURISTIC is
   op addScore : Literal Float ScorePairList -> ScorePairList .
 
   eq addScore(l, N, (SPL1, l :| M, SPL2)) = insertScorePair(l :| (N + M), (SPL1, SPL2)) .
-  
-  *** op sumScore : ScorePairList ScorePairList -> ScorePairList .
 
-  *** eq sumScore(emptySPL, emptySPL) = emptySPL .
-  *** eq sumScore((l : N , SPL) , (SPl, l:M, Spl)) = l : (N + M) , sumScore(SPL, (SPl Spl)) .
+  op resetScorePairList : ScorePairList -> ScorePairList .
 
+  eq resetScorePairList(emptySPL) = emptySPL .
+  eq resetScorePairList(l :| N, SPL1) = (l :| 0.0 , resetScorePairList(SPL1)) .
 
-  *** eq resetScore : ScorePairList -> ScorePairList .
+  op divideScorePairList : ScorePairList Float -> ScorePairList .
 
-  *** eq resetScore(emptySPL) = emptySPL .
-  *** eq resetScore() = .
+  eq divideScorePairList(emptySPL, N) = emptySPL  .
+  eq divideScorePairList((l :| M ,  SPL1), N) = (l :| (M / N)) , divideScorePairList(SPL1, N) .
+
+  op updateClauseScore : Clause ScorePairList Float -> ScorePairList . 
+
+  eq updateClauseScore([], SPL1, N) = SPL1 .
+  eq updateClauseScore(l \/ C, SPL1, N) = updateClauseScore(C, addScore(l, N, SPL1), N) .
+
+  op updateClauseSetScore : ClauseSet ScorePairList Float -> ScorePairList .
+
+  eq updateClauseSetScore(emptyCS, SPL1, N) = SPL1 .
+  eq updateClauseSetScore((C, CS), SPL1, N) = updateClauseSetScore(CS, updateClauseScore(C, SPL1, N), N) .
+
 
 endfm
