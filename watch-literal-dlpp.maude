@@ -42,6 +42,10 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
   rl [WForget] : M || WCS, WC, WCS' => M || WCS, WCS' .
 
   rl [WRestart] : M || WCS => emptyCTX || WCS .
+
+  rl [WChangeWatchedClauseSet] : M || WCS => M || WCS' [nonexec] .
+
+  crl [WBackjump3] : M d(l) N || WCS => l M || WCS if existsDecisionLiteral(N) [nonexec] .
     
 
 endm

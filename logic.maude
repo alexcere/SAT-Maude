@@ -2,6 +2,7 @@ fmod LOGIC is
     
 	protecting QID .
 	protecting FLOAT .
+	protecting NAT .
 
 	sorts Literal Context Clause ClauseSet BasicSequent Sequent .
 	
@@ -25,7 +26,7 @@ fmod LOGIC is
 	var p : Qid .
 	var l u : Literal .
 	var CTX M N : Context .
-	var C : Clause .
+	var C C' : Clause .
 	var CS : ClauseSet .
 
 	eq ~(~(l)) = l .
@@ -46,10 +47,10 @@ fmod LOGIC is
 	eq l \/ l \/ C = l \/ C .
 
 	*** Size of a clause
-	op csize : Clause -> Float .
+	op csize : Clause -> Nat .
 
-	eq csize([]) = 0.0 .
-	eq csize(l \/ C) = 1.0 + csize(C) .
+	eq csize([]) = 0 .
+	eq csize(l \/ C) = 1 + csize(C) .
 
 	*** Size of a set of clauses
 
@@ -57,6 +58,13 @@ fmod LOGIC is
 
 	eq cssize(emptyCS) = 0 .
 	eq cssize(C, CS) = 1 + cssize(CS) .
+
+	*** Size of context
+
+	op ctxsize : Context -> Nat .
+
+	eq ctxsize(emptyCTX) = 0 .
+	eq ctxsize(M l) = 1 + ctxsize(M) .
 	
 
 	*** Entailment operator returns true if a literal from
@@ -95,13 +103,41 @@ fmod LOGIC is
 
 	eq removeLiteralFromClause(l, l \/ C) = C .
 
+	*** Given a literal, returns its associated
+	*** variable i.e non-negated
+	op literalToVariable : Literal -> Literal .
+
+	eq literalToVariable(~(l)) = l .
+	eq literalToVariable(l) = l .
+
 	*** Given a clause that contain several literals, we obtain
   	*** its representation with variables instead: we change each negated
   	*** literal ~l for l
   	op obtainVariablesInClause : Clause -> Clause .
 
   	eq obtainVariablesInClause([]) = [] .
-	eq obtainVariablesInClause(~(l) \/ C) = l \/ obtainVariablesInClause(C) .
-	eq obtainVariablesInClause(l \/ C) = l \/ obtainVariablesInClause(C) .
+	eq obtainVariablesInClause(l \/ C) = literalToVariable(l) \/ obtainVariablesInClause(C) .
+
+	*** Given a clause set, we obtain its variable representation.
+	op obtainVariablesInClauseSet : ClauseSet -> ClauseSet .
+
+	eq obtainVariablesInClauseSet(emptyCS) = emptyCS .
+	eq obtainVariablesInClauseSet(C,CS) = obtainVariablesInClause(C) , obtainVariablesInClauseSet(CS) .
+    
+	*** Count how many literals there are in a clause
+	op countLiteralsInClauseSet : Clause -> Nat .
+
+	eq countLiteralsInClauseSet(emptyCS) = 0 .
+
+	*** We first remove duplicates
+	eq countLiteralsInClauseSet(l \/ C, l \/ C', CS) = countLiteralsInClauseSet(l \/ C, C', CS) .
+
+	*** If no duplicates are found, we measure the size of each clause
+	eq countLiteralsInClauseSet(C, CS) = csize(C) + countLiteralsInClauseSet(CS) [owise] .
+
+    *** Count how many variables there are in a clause
+	op countVariablesInClauseSet : ClauseSet -> Nat .
+
+	eq countVariablesInClauseSet(CS) = countLiteralsInClauseSet(obtainVariablesInClauseSet(CS)) .
 	
 endfm

@@ -1,8 +1,9 @@
 sload scored-heuristic
 
 fmod JW-HEURISTIC is
-  protecting SCORED-HEURISTIC .
-  protecting FLOAT .
+  pr SCORED-HEURISTIC .
+  pr FLOAT .
+  pr CONVERSION .
 
   var N : Float .
   var l : Literal .
@@ -13,7 +14,7 @@ fmod JW-HEURISTIC is
   op JWHeuristicClauseSet : ClauseSet ScorePairList -> ScorePairList .
 
   eq JWHeuristicClauseSet(emptyCS, SPL) = SPL .
-  eq JWHeuristicClauseSet((C,CS) , SPL) = JWHeuristicClauseSet(CS, updateClauseScore(C, SPL, 2.0 ^ (-( csize(C) )))) .
+  eq JWHeuristicClauseSet((C,CS) , SPL) = JWHeuristicClauseSet(CS, updateClauseScore(C, SPL, 2.0 ^ (-(float(csize(C)) )))) .
 
   op JWHeuristic : ClauseSet -> ScorePairList .
 

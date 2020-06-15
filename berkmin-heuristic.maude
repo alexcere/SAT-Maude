@@ -1,61 +1,289 @@
 sload scored-heuristic
 sload uip
 sload watch-literal
+sload jw-heuristic
+sload pair
 
-fmod BERKMIN-HEURISTIC is
+view WatchedClauseSet from TRIV to WATCH-LITERAL is
+  sort Elt to WatchedClauseSet .
+endv
+
+view Clause from TRIV to LOGIC is 
+  sort Elt to Clause .
+endv
+
+fmod BERKMIN-INFO is
   pr SCORED-HEURISTIC .
   pr FLOAT .
   pr UNIQUE-IMPLICATION-POINT .
+  pr JW-HEURISTIC .
+  pr WATCH-LITERAL .
+  pr PAIR{Clause, Nat} .
+  pr PAIR{WatchedClauseSet, Nat} .
+  pr CONVERSION .
 
-  sort BerkminInfo .
+  sort BerkminInfo ClauseScore ClauseScoreList .
 
-  op <_,_,_,_,_,_,_> -> BerkminInfo .
+  subsort ClauseScore < ClauseScoreList .
 
-  var F : Float .
-  var l : Literal .
-  var C1 C2 C3 C4 : Clause .
-  var CS : ClauseSet .
+  op emptyCSL : -> ClauseScoreList .
+  
+  op _:>_ : Clause Nat -> ClauseScore [prec 20] .
+  op _,_ : ClauseScoreList ClauseScoreList -> ClauseScoreList [assoc id: emptyCSL prec 30] .
+
+  *** var_activity, lit_activity, nb_two, size of initial ClauseSet,
+  *** size of learned clauses so far, current top clause, current top clause position 
+  *** clause_activity, activity threshold
+
+  op <_,_,_,_,_,_,_,_,_> : ScorePairList ScorePairList ScorePairList Nat Nat Clause Nat ClauseScoreList Nat -> BerkminInfo .
+  
+  var N N1 N2 N3 NInitial ActualClauseIdx NActivityThreshold : Nat .
+  var F F1 F2 : Float .
+  var l x y : Literal .
+  var CTX : Context .
+  var C C1 C2 C3 C4 : Clause .
+  var CS CS' : ClauseSet .
   var CIS : ConflictInfoSet .
-  var SPL : ScorePairList .
+  var SPL SPL' SPL'' VarActivity LitActivity NbTwo : ScorePairList .
+  var CSL CSL' CSL''  : ClauseScoreList .
+  var WCS : WatchedClauseSet .
+  var BI : BerkminInfo .
+  var EraseInfo : Pair{WatchedClauseSet, Nat} .
 
-  op decaySumBerkmin : ScorePairList -> ScorePairList .
+  *** Given the CIS, the conflict clause and the backjump clause.
+  *** returns all intermediate clauses that have been used to generate the
+  *** final backjump clause, without taking into account the final backjump clause. 
+  *** This function is not called directly, as it doesn't add the initial conflict clause.
+  op obtainIntermediateClausesBackjumping : ConflictInfoSet Clause Clause -> ClauseSet .
 
-  eq decaySumBerkmin(SPL) = divideScorePairList(SPL, 4.0) .
+  eq obtainIntermediateClausesBackjumping(CIS, C, C) = emptyCS .
 
-  op initializeBerkmin : ClauseSet -> ScorePairList .
+  *** Instead of adding C4, we add previous clause used for the generation.
+  ceq obtainIntermediateClausesBackjumping(CIS l -> (C1 \/ l) , ~(l) \/ C2, C3) = 
+    C1 \/ l , obtainIntermediateClausesBackjumping(CIS, C4 , C3) if C4 := C1 \/ C2 .
 
-  eq initializeBerkmin(CS) = updateClauseSetScore(CS, obtainInitialScoreList(CS), 1.0) .
+  ceq obtainIntermediateClausesBackjumping(CIS ~(l) -> (C1 \/ ~(l)), l \/ C2, C3) = 
+    (C1 \/ ~(l)) , obtainIntermediateClausesBackjumping(CIS, C4 , C3) if C4 := C1 \/ C2 .
 
-  op obtainIntermediateClausesBackjumping : ConflictInfoSet ClauseSet Clause Clause -> ClauseSet .
+  eq obtainIntermediateClausesBackjumping(CIS l -> C1, C2, C3) = 
+    obtainIntermediateClausesBackjumping(CIS, C2, C3) [owise] .
 
-  eq obtainIntermediateClausesBackjumping(CIS, CS, C1, C1) = CS .
+  *** Initialize var_activity score. For each literal found in a clause in the set of clauses, 
+  *** we add 1 to its corresponding variable.
+  op initializeVarActivity : ClauseSet -> ScorePairList . 
 
-  ceq obtainIntermediateClausesBackjumping(CIS l -> (C1 \/ l) , CS, ~(l) \/ C2, C3) = 
-    obtainIntermediateClausesBackjumping(CIS, (C4, CS), C4 , C3) if C4 := C1 \/ C2 .
+  ceq initializeVarActivity(CS) = updateClauseSetScore(CS' , VarActivity, 1.0) 
+    if CS' := obtainVariablesInClauseSet(CS) /\ VarActivity := obtainInitialScoreList(CS') .
+  
+  *** Update the activity counter by obtaining all the intermediate clauses for obtaining
+  *** the backjump clause and adding 1 to current activity per variable found.
+  op updateVarActivity : ScorePairList ClauseSet -> ScorePairList .
 
-  ceq obtainIntermediateClausesBackjumping(CIS ~(l) -> (C1 \/ ~(l)), CS, l \/ C2, C3) = 
-    obtainIntermediateClausesBackjumping(CIS, (C4, CS), C4 , C3) if C4 := C1 \/ C2 .
+  ceq updateVarActivity(VarActivity, CS) = updateClauseSetScore(CS', VarActivity, 1.0) 
+    if CS' := obtainVariablesInClauseSet(CS) .
 
-  eq obtainIntermediateClausesBackjumping(CIS l -> C1, CS, C2, C3) = 
-    obtainIntermediateClausesBackjumping(CIS, CS, C2, C3) [owise] .
+  *** Initialize LiteralActivity : for each literal in the clase set,
+  *** we initialize to 0. It is the same as obtainInitialScoreList, but
+  *** we define another function just in case it wants to be modified in the future.
+  op initializeLitActivity : ClauseSet -> ScorePairList .
 
-  op updateScoreBackjumpingBerkmin : ScorePairList ConflictInfoSet Clause Clause -> ScorePairList . 
+  eq initializeLitActivity(CS) = obtainInitialScoreList(CS) .
 
-  eq updateScoreBackjumpingBerkmin(SPL, CIS, C1, C2) = 
-    updateClauseSetScore(obtainIntermediateClausesBackjumping(CIS, emptyCS, C1, C2), SPL, 1.0) .
+  *** The lit_activity is updated by adding 1 per literal in backjump clause.
+  op updateLitActivity : ScorePairList Clause -> ScorePairList .
 
-  op obtainMostRecentNonSatisfiedWatchedClause : Context WatchedClauseSet -> WatchedClause .
+  eq updateLitActivity(LitActivity, C) = updateClauseScore(C, LitActivity, 1.0) .
 
-  ceq obtainMostRecentNonSatisfiedWatchedClause(M, (x \/ y : C, WCS)) = 
-    obtainMostRecentNonSatisfiedWatchedClause(M, WCS) if (x in M) \/ (y in M) \/ M |= C .
-  eq obtainMostRecentNonSatisfiedWatchedClause(M, (x \/ y : C, WCS)) = x \/ y : C [owise] .
+  *** Initialize nb_two function. Instead of using the one in Berkmin,
+  *** as we know that we are working with 3-sat instances (so nb_two(l) = 0
+  *** for any l), we will use JW-Heuristic 
+  op initializeNbTwo : ClauseSet -> ScorePairList .
 
-  op initializeVarActivity :  .
+  eq initializeNbTwo(CS) = JWHeuristic(CS) .
 
-  op initializeLitActivity :  .
+  *** Initialize clause_activity function.
+  op initializeClauseActivity : ClauseSet -> ClauseScoreList .
 
-  op initializeNbTwo : .
+  eq initializeClauseActivity(emptyCS) = emptyCSL .
+  eq initializeClauseActivity(C, CS) = C :> 0 , initializeClauseActivity(CS) .
 
-  op 
+  *** Given the intermediate set of clauses that have formed a conflict,
+  *** updates its score. Note that we this list doesn't take into account order.
+  op updateClauseActivity : ClauseSet ClauseScoreList -> ClauseScoreList .
+
+  eq updateClauseActivity(emptyCS, CSL) = CSL .
+  eq updateClauseActivity((C,CS), (CSL, C :> N, CSL')) = C :> (N + 1) , updateClauseActivity(CS, (CSL, CSL')) .
+
+
+  *** Auxilary function for chooseMaximumVarActivityVariable
+  op chooseMaximumVarActivityVariableExtended : Context Clause ScorePairList Float Literal -> Literal .
+
+  ceq chooseMaximumVarActivityVariableExtended(CTX, l \/ C, (SPL, l :| F1 , SPL'), F2, x) = 
+    chooseMaximumVarActivityVariableExtended(CTX, C, (SPL, SPL'), F1, literalToVariable(l)) 
+    if F1 > F2 /\ definedLiteral(l, CTX) =/= true .
+  ceq chooseMaximumVarActivityVariableExtended(CTX, ~(l) \/ C, (SPL, l :| F1 , SPL'), F2, x) = 
+    chooseMaximumVarActivityVariableExtended(CTX, C, (SPL, SPL'), F1, ~(l)) 
+    if F1 > F2 /\ definedLiteral(l, CTX) =/= true .
+  eq chooseMaximumVarActivityVariableExtended(CTX, C, SPL , F1, x) = x [owise] .
+
+  *** Function that obtains the variable from current clause
+  *** with the highest activity associated.
+  op chooseMaximumVarActivityVariable : Context Clause ScorePairList -> Literal .
+
+  ceq chooseMaximumVarActivityVariable(CTX, l \/ C, (SPL, l :| F1 , SPL')) = 
+    chooseMaximumVarActivityVariableExtended(CTX, C, (SPL, SPL'), F1, l) 
+    if definedLiteral(l,CTX) =/= true .
+  ceq chooseMaximumVarActivityVariable(CTX, ~(l) \/ C, (SPL, l :| F1 , SPL')) = 
+    chooseMaximumVarActivityVariableExtended(CTX, C, (SPL, SPL'), F1, ~(l)) 
+    if definedLiteral(l,CTX) =/= true .
+
+  *** Given the variable and the score list (possibly lit_ac o nb_two)
+  *** return the branch value. As they are sorted, necessarily F1 >= F2.
+  op chooseLiteralFromVariable : Literal ScorePairList -> Literal .
+
+  eq chooseLiteralFromVariable(l, (SPL, l :| F1, SPL', ~(l) :| F2, SPL'')) = l .
+  eq chooseLiteralFromVariable(l, (SPL, ~(l) :| F1, SPL', l :| F2, SPL'')) = ~(l) .
+  eq chooseLiteralFromVariable(~(l), (SPL, l :| F1, SPL', ~(l) :| F2, SPL'')) = l .
+  eq chooseLiteralFromVariable(~(l), (SPL, ~(l) :| F1, SPL', l :| F2, SPL'')) = l .
+  
+  *** Given lit_activity, nb_two, number of clauses in the initial clause set 
+  *** and current top clause index, returns the scoredlist we are using to decide
+  *** which branch is taken.
+  op chooseScoredList : ScorePairList ScorePairList Nat Nat -> ScorePairList .
+
+  eq chooseScoredList(LitActivity, NbTwo, NInitial, ActualClauseIdx) = 
+    if NInitial <= ActualClauseIdx then LitActivity else NbTwo fi .
+
+
+  *** Given the set of watched clauses, returns the current top clause 
+  *** i.e the most recent clause added non satisfied
+  op obtainCurrentTopClause : Context WatchedClauseSet Nat -> Pair{Clause, Nat} .
+
+  *** Instead of just checking CTX |= C == true, we first check the two
+  *** watched literals just in case one has already been satisfied
+  ceq obtainCurrentTopClause(CTX, (x \/ y : C, WCS), N) = 
+    obtainCurrentTopClause(CTX, WCS, N - 1) if CTX |= C .
+    *** obtainCurrentTopClause(CTX, WCS, N - 1) if (x in CTX) or (y in CTX) or CTX |= C .
+  eq obtainCurrentTopClause(CTX, (x \/ y : C, WCS), N) = < C ; N > [owise] .
+
+  *** Given the set of watched clauses, the activity_clause function, current topmost,
+  *** an index with the number of learnt clauses and an index to count 
+  *** how many clauses we have considered so far, and current activity threshold
+  *** returns the final watched clause set after removing clauses following
+  *** Berkmin deletion policy and the number of learnt clauses remaining
+  op eraseWatchedClauseSet : WatchedClauseSet ClauseScoreList Clause Nat Nat Nat -> Pair{WatchedClauseSet, Nat} .
+
+  *** Case base: we have inspected all Learnt Clauses
+  eq eraseWatchedClauseSet(WCS, CSL, C, N, N, NActivityThreshold) = < WCS ; 0 > .
+
+  *** Case current top clause: we don't remove this clause
+  ceq eraseWatchedClauseSet((C1 : C, WCS), CSL, C, N1, N2, NActivityThreshold) = <(C1 : C, 1st(EraseInfo)) ;
+    2nd(EraseInfo) + 1 > if EraseInfo := eraseWatchedClauseSet(WCS, CSL, C, N1, N2 + 1, NActivityThreshold) .
+
+  ceq eraseWatchedClauseSet((C1 : C2, WCS), (CSL, C2 :> N, CSL'), C3, N1, N2, NActivityThreshold) = 
+    < (C1 : C2 , 1st(EraseInfo)) ; 2nd(EraseInfo) + 1 > 
+    if ((float(N1) <=  float(N2) / 16.0  and (csize(C2) < 43 or N > 7)) or
+    (float(N1) > float(N2) / 16.0  and (csize(C2) < 9  or N > NActivityThreshold))) /\ 
+    EraseInfo := eraseWatchedClauseSet(WCS, CSL, C3, N1, N2 + 1, NActivityThreshold) . 
+    
+  eq eraseWatchedClauseSet(( C1 : C2, WCS), CSL, C, N1, N2, NActivityThreshold) =
+    eraseWatchedClauseSet(WCS, CSL, C, N1, N2 + 1, NActivityThreshold) . 
+
+endfm
+
+view BerkminInfo from TRIV to BERKMIN-INFO is
+  sort Elt to BerkminInfo .
+endv
+
+*** Functional module that contains all the functions
+*** that are needed to use in strat. Calls multiple functions
+*** from BERKMIN-INFO.
+fmod BERKMIN-HEURISTIC is
+  pr BERKMIN-INFO .
+  pr PAIR{WatchedClauseSet, BerkminInfo} .
+
+  var N NInitial NLearnt ActualClauseIdx NActivityThreshold NewNLearnt NewActualIdx : Nat . 
+  var F F1 F2 : Float .
+  var l x : Literal .
+  var CTX : Context .
+  var C C' ConflictClause BackjumpClause TopClause NewTopClause : Clause .
+  var CS CS' : ClauseSet .
+  var CIS : ConflictInfoSet .
+  var SPL SPL' SPL'' VarActivity LitActivity NbTwo NewVarActivity NewLitActivity : ScorePairList .
+  var WCS WCS' WCS'' : WatchedClauseSet .
+  var ClauseActivity NewClauseActivity : ClauseScoreList .
+  var BI BI' : BerkminInfo .
+  var ChangeTopClauseInfo : Pair{Clause, Nat} .
+  var RestartInfo : Pair{WatchedClauseSet, Nat} .
+
+  *** We initialize BerkminfInfo from the initial clause set.
+  op initializeBerkmin : ClauseSet -> BerkminInfo .
+
+  ceq initializeBerkmin(C,CS) = < initializeVarActivity(CS'), initializeLitActivity(CS'), 
+    initializeNbTwo(CS'), N, 0, C, N - 1, initializeClauseActivity(CS'), 60 > if CS' := C,CS /\ N := cssize(CS') .
+
+  *** For choosing next decision literal, we focus on current top clause.
+  *** We compare var_activity for each variable in this clause, choose the variable
+  *** with the maximum value associated,
+  *** and use lit_activity (if it is a conflict clause) or nb_two (if it is an initial clause) 
+  *** for choosing the literal.
+  op chooseNextDecisionLiteral : Context BerkminInfo -> Literal .
+
+  ceq chooseNextDecisionLiteral(CTX, BI) =  chooseLiteralFromVariable(l, SPL)
+    if < VarActivity, LitActivity, NbTwo, NInitial, NLearnt, TopClause, ActualClauseIdx, 
+      ClauseActivity, NActivityThreshold > := BI /\ 
+      SPL := chooseScoredList(LitActivity, NbTwo, NInitial, ActualClauseIdx) /\
+      l := chooseMaximumVarActivityVariable(CTX, TopClause, VarActivity) .
+
+  
+  *** Once we have satisfied a WatchedClause, we have to change current Top clause
+  *** to match the newest satisfied top clause. This function checks from the last
+  *** top clause, therefore, it can only be used for taking a decision .
+  op changeCurrentTopClauseForDecision : Context WatchedClauseSet BerkminInfo -> BerkminInfo .
+
+  ceq changeCurrentTopClauseForDecision(CTX, WCS, BI) = < VarActivity, LitActivity, NbTwo, NInitial, 
+    NLearnt, NewTopClause , NewActualIdx , ClauseActivity, NActivityThreshold >
+    if < VarActivity, LitActivity, NbTwo, NInitial, NLearnt, TopClause, ActualClauseIdx, 
+      ClauseActivity, NActivityThreshold > := BI /\
+      (WCS', C : TopClause, WCS'') := WCS /\
+      ChangeTopClauseInfo := obtainCurrentTopClause(CTX, (C : TopClause, WCS''), ActualClauseIdx) /\
+      NewTopClause := 1st(ChangeTopClauseInfo) /\ NewActualIdx := 2nd(ChangeTopClauseInfo) .
+
+  *** When the backjump Clause is generated, we have to update current top clause,
+  *** var_activity, lit_activity, the number of clauses learnt (adding 1), current top
+  *** clause, its associated index, and the clauseActivity. We use functions defined previously.
+  *** For updating var_activity, we consider the intermediate clauses and the conflict clause.
+  *** For updating lit_activity, we only use the intermediate clause.
+  *** For updating clause_activity, we use the intermediate clauses that led to the conflict
+  *** and add new BackjumpClause (as it is added to the stack).
+  op updateBerkminInfoForBackjumping : Context WatchedClauseSet ConflictInfoSet Clause Clause BerkminInfo -> BerkminInfo .
+
+  ceq updateBerkminInfoForBackjumping(CTX, WCS, CIS, ConflictClause, BackjumpClause, BI) = 
+    < NewVarActivity, NewLitActivity, NbTwo, NInitial, 
+    NewNLearnt, NewTopClause, NewActualIdx, ClauseActivity, NActivityThreshold >
+    if < VarActivity, LitActivity, NbTwo, NInitial, NLearnt, TopClause, ActualClauseIdx, 
+      ClauseActivity, NActivityThreshold > := BI /\
+      NewNLearnt := NLearnt + 1 /\
+      ChangeTopClauseInfo := obtainCurrentTopClause(CTX, WCS, ( NInitial + NewNLearnt ) - 1) /\
+      NewTopClause := 1st(ChangeTopClauseInfo) /\ NewActualIdx := 2nd(ChangeTopClauseInfo) /\
+      CS :=  obtainIntermediateClausesBackjumping(CIS, ConflictClause, BackjumpClause) /\
+      NewVarActivity := updateVarActivity(VarActivity, (ConflictClause, CS)) /\
+      NewLitActivity := updateLitActivity(LitActivity, BackjumpClause) /\
+      NewClauseActivity := (BackjumpClause :> 0 , updateClauseActivity(CS, ClauseActivity)) .
+
+
+  *** When restarting, we have to eliminate clauses following the Berkmin approach,
+  *** update number of learnt clauses, activity threshold and current top clause and its index.
+  *** New current top corresponds to top of the stack and its associated index is NInitial + NewNLearnt - 1.
+  *** Activity threshold is incremented by 7
+  op restartTree : BerkminInfo WatchedClauseSet -> Pair{WatchedClauseSet, BerkminInfo} .
+
+  ceq restartTree(BI, WCS) = < (C' : C, WCS') ; BI' >
+    if < VarActivity, LitActivity, NbTwo, NInitial, NLearnt, TopClause, ActualClauseIdx, 
+    ClauseActivity, NActivityThreshold > := BI /\
+    RestartInfo := eraseWatchedClauseSet(WCS, ClauseActivity, TopClause, NLearnt, 0, NActivityThreshold) /\
+    (C' : C , WCS') := 1st(RestartInfo) /\ NewNLearnt := 2nd(RestartInfo) /\
+    BI' := < VarActivity, LitActivity, NbTwo, NInitial, NewNLearnt, C, (NInitial + NewNLearnt) - 1 , 
+    ClauseActivity, NActivityThreshold + 7 > .
 
 endfm
