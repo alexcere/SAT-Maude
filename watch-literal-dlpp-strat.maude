@@ -29,6 +29,11 @@ smod WATCH-LITERAL-DLPP-STRATEGY is
     strat decide-literal : ScorePairList @ WatchedSequent .
     strat convert-watch-literal : ScorePairList @ BasicSequent .
 
+    sd fail-branch(l, l, CIS, LiteralSet) := 
+        WBackjump3[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
+        by Seq using select-clauses(y, CIS', LiteralSet) .
+
     sd fail-branch(l, C, CIS, LiteralSet) :=  (WBackjump1[l <- l, C <- C] or-else 
         WBackjump2) ? (WLearn[C <- C] ; 
         matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)

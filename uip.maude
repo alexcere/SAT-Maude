@@ -72,6 +72,7 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
      *** Special case: if context if empty, this means we have restarted and no
      *** literal is found at level 0. Therefore, the corresponding CIS is the empty one. 
      eq generateConflictInfoSetFromBackjump(emptyCTX, CIS, C) = emptyCIS .
+     eq generateConflictInfoSetFromBackjump(l, CIS, C) = l -> C . 
      eq generateConflictInfoSetFromBackjump(M x l, CIS (x -> C) Cis, C') = CIS (x -> C) (l -> C') .
      eq generateConflictInfoSetFromBackjump(M d(x) l, CIS (x -> C) Cis, C') = CIS (x -> C) (l -> C') .
 

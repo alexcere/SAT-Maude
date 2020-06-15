@@ -31,6 +31,11 @@ smod VSIDS-HEURISTIC-STRATEGY is
     strat select-clauses : Context ConflictInfoSet ScorePairList ScorePairList Nat @ WatchedSequent .
     strat convert-watch-literal : ScorePairList @ BasicSequent .
 
+    sd fail-branch(l, l, CIS, CurrentLiterals, ScoredLiterals, N) := 
+        WBackjump3[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
+        by Seq using select-clauses(y, CIS', ScoredLiterals, ScoredLiterals, N) .
+
     sd fail-branch(l, C, CIS, CurrentLiterals, ScoredLiterals, N) :=  
         (WBackjump1[l <- l, C <- C] or-else 
         WBackjump2) ? (WLearn[C <- C] ; 
