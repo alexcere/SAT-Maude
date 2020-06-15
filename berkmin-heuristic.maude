@@ -39,7 +39,7 @@ fmod BERKMIN-INFO is
   op <_,_,_,_,_,_,_,_,_> : ScorePairList ScorePairList ScorePairList Nat Nat Clause Nat ClauseScoreList Nat -> BerkminInfo .
   
   var N N1 N2 N3 NInitial ActualClauseIdx NActivityThreshold : Nat .
-  var F F1 F2 : Float .
+  var F F1 F2 Limit : Float .
   var l x y : Literal .
   var CTX : Context .
   var C C1 C2 C3 C4 : Clause .
@@ -50,6 +50,9 @@ fmod BERKMIN-INFO is
   var WCS : WatchedClauseSet .
   var BI : BerkminInfo .
   var EraseInfo : Pair{WatchedClauseSet, Nat} .
+  var Cond1 Cond2 Cond3 Cond4 : Bool .
+
+  eq CSL, C :> N1 , CSL' , C :> N2 = CSL, C :> (N1 + N2) , CSL' . 
 
   *** Given the CIS, the conflict clause and the backjump clause.
   *** returns all intermediate clauses that have been used to generate the
@@ -183,10 +186,13 @@ fmod BERKMIN-INFO is
 
   ceq eraseWatchedClauseSet((C1 : C2, WCS), (CSL, C2 :> N, CSL'), C3, N1, N2, NActivityThreshold) = 
     < (C1 : C2 , 1st(EraseInfo)) ; 2nd(EraseInfo) + 1 > 
-    if ((float(N1) <=  float(N2) / 16.0  and (csize(C2) < 43 or N > 7)) or
-    (float(N1) > float(N2) / 16.0  and (csize(C2) < 9  or N > NActivityThreshold))) /\ 
-    EraseInfo := eraseWatchedClauseSet(WCS, CSL, C3, N1, N2 + 1, NActivityThreshold) . 
+    if N3 := csize(C2) /\ Limit := float(N1) / 16.0 /\
+      Cond1 := float(N2) <= Limit /\ Cond2 := (N3 < 43 or N > 7) /\
+      Cond3 := N3 < 9 or N > NActivityThreshold /\
+      (Cond1 and Cond2) or (not(Cond1) and Cond3) /\ 
+      EraseInfo := eraseWatchedClauseSet(WCS, CSL, C3, N1, N2 + 1, NActivityThreshold) . 
     
+
   eq eraseWatchedClauseSet(( C1 : C2, WCS), CSL, C, N1, N2, NActivityThreshold) =
     eraseWatchedClauseSet(WCS, CSL, C, N1, N2 + 1, NActivityThreshold) . 
 
@@ -263,7 +269,7 @@ fmod BERKMIN-HEURISTIC is
 
   ceq updateBerkminInfoForBackjumping(CTX, WCS, CIS, ConflictClause, BackjumpClause, BI) = 
     < NewVarActivity, NewLitActivity, NbTwo, NInitial, 
-    NewNLearnt, NewTopClause, NewActualIdx, ClauseActivity, NActivityThreshold >
+    NewNLearnt, NewTopClause, NewActualIdx, NewClauseActivity, NActivityThreshold >
     if < VarActivity, LitActivity, NbTwo, NInitial, NLearnt, TopClause, ActualClauseIdx, 
       ClauseActivity, NActivityThreshold > := BI /\
       NewNLearnt := NLearnt + 1 /\
@@ -299,7 +305,7 @@ fmod BERKMIN-HEURISTIC is
     ClauseActivity, NActivityThreshold > := BI /\
     RestartInfo := eraseWatchedClauseSet(WCS, ClauseActivity, TopClause, NLearnt, 0, NActivityThreshold) /\
     WCS' := 1st(RestartInfo) /\ NewNLearnt := 2nd(RestartInfo) /\
-    ChangeTopClauseInfo := obtainCurrentTopClause(CTX, WCS, ( NInitial + NewNLearnt ) - 1) /\
+    ChangeTopClauseInfo := obtainCurrentTopClause(CTX, WCS', ( NInitial + NewNLearnt ) - 1) /\
     NewTopClause := 1st(ChangeTopClauseInfo) /\ NewActualIdx := 2nd(ChangeTopClauseInfo) /\
     BI' := < VarActivity, LitActivity, NbTwo, NInitial, NewNLearnt, NewTopClause, NewActualIdx , 
     ClauseActivity, NActivityThreshold + 7 > .

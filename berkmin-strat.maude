@@ -31,6 +31,18 @@ smod BERKMIN-STRATEGY is
     strat select-clauses : Context ConflictInfoSet BerkminInfo Nat Nat @ WatchedSequent .
     strat decide-literal : ConflictInfoSet BerkminInfo Nat Nat @ WatchedSequent .
     strat convert-watch-literal : BerkminInfo Nat @ BasicSequent .
+    strat decide-if-restart : Literal ConflictInfoSet BerkminInfo Nat Nat @ WatchedSequent .
+
+    
+    sd decide-if-restart(l, CIS, BI, 550, NLiterals) := 
+        WRestart ; matchrew Seq s.t. (M || WCS) := Seq /\ RestartInfo := restartTree(BI, M, WCS) /\
+        WCS' := 1st(RestartInfo) /\ BI' := 2nd(RestartInfo) /\
+        CIS' := generateConflictInfoSetFromBackjump(M, CIS, l) by Seq using 
+        ( WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(CIS', BI', 0, NLiterals) ) .
+
+    sd decide-if-restart(l, CIS, BI, NRestart, NLiterals) := 
+        select-clauses(l, CIS, BI, NRestart + 1, NLiterals) .
+
 
     *** Case our backjump clause has only one literal: instead of learning it, 
     *** we just apply rule wbackjump3, that places that literal at level 0, so it won't
@@ -43,19 +55,13 @@ smod BERKMIN-STRATEGY is
         /\ BI' :=  updateBerkminInfoForBackjumpingOneClause(CTX, WCS, CIS, ConflictClause, l, BI)
         by Seq using select-clauses(y, CIS', BI', NRestart, NLiterals) .
 
-    sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, 10, NLiterals) := WLearn[C <- BackjumpClause] ; 
-        WRestart ; matchrew Seq s.t. (M || WCS) := Seq /\ RestartInfo := restartTree(BI, M, WCS) /\
-        WCS' := 1st(RestartInfo) /\ BI' := 2nd(RestartInfo) /\
-        CIS' := generateConflictInfoSetFromBackjump(M, CIS, l) by Seq using 
-        ( WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(CIS', BI', 0, NLiterals) ) .
-
     sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, NRestart, NLiterals) :=  
         (WBackjump1[l <- l, C <- BackjumpClause] or-else 
         WBackjump2) ? (WLearn[C <- BackjumpClause] ; 
         matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, BackjumpClause)
         /\ BI' :=  updateBerkminInfoForBackjumping(CTX, WCS, CIS, ConflictClause, BackjumpClause, BI)
-        by Seq using select-clauses(y, CIS', BI', NRestart + 1, NLiterals)) : WFail [label fb] .
+        by Seq using decide-if-restart(y, CIS', BI', NRestart, NLiterals)) : WFail [label fb] .
 
     sd generate-failure-info(CIS, ConflictClause, BI, NRestart, NLiterals) := matchrew Seq s.t. (M || WCS) := Seq 
         /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
@@ -85,7 +91,7 @@ smod BERKMIN-STRATEGY is
         /\ ctxsize(M) < NLiterals
         /\ BI' := changeCurrentTopClauseForDecision(M, WCS, BI)
         /\ BI' =/= failUpdateBerkminInfo
-        /\ l := chooseNextDecisionLiteral(M, BI') /\ l :: Literal
+        /\ l := chooseNextDecisionLiteral(M, BI') 
         by Seq using (WDecide[l <- l] ; success-decision(CIS, BI', NRestart, NLiterals)) or-else idle .
 
     sd success-decision(CIS, BI, NRestart, NLiterals) := matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 

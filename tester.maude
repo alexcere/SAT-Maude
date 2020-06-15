@@ -2,21 +2,22 @@ sload watch-literal
 
 fmod TESTER is pr WATCH-LITERAL .
 
-    var BasSeq : BasicSequent .
-    var WatSeq : WatchedSequent .
     var C C' : Clause .
     var CS : ClauseSet .
     var WCS : WatchedClauseSet .
     var M : Context .
+    var l : Literal .
 
     op reduceBasicSequent : BasicSequent -> [Bool] .
 
     eq reduceBasicSequent(M || emptyCS) = true .
     ceq reduceBasicSequent(M || C, CS) = reduceBasicSequent(M || CS) if M |= C .
+    ceq reduceBasicSequent(M || (l \/ C) , CS) = reduceBasicSequent(M || CS) if definedLiteral(l, C) =/= true .
 
-    op reduceWatchedSequent : WatchedSequent -> [Bool].
+    op reduceWatchedSequent : WatchedSequent -> [Bool] .
 
-    eq reduceBasicSequent(M || emptyWCS) = true .
-    ceq reduceBasicSequent(M || C' : C, WCS) = reduceBasicSequent(M || WCS) if M |= C .
+    eq reduceWatchedSequent(M || emptyWCS) = true .
+    ceq reduceWatchedSequent(M || C' : C, WCS) = reduceWatchedSequent(M || WCS) if M |= C .
+    ceq reduceBasicSequent(M || C' : (l \/ C) , WCS) = reduceBasicSequent(M || WCS) if definedLiteral(l, C) =/= true .
 
 endfm
