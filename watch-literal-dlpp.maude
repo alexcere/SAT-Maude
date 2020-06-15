@@ -28,6 +28,10 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
   crl [WDecide] : M || WCS => M d(l) || WCS
     if definedLiteral(l,M) =/= true [nonexec] .
 
+  *** We try to jump to the lowest level possible: this level verifies that
+  *** M d(x) N |= C' but M |= C' == false. If M |= C == true for M without decision
+  *** literals, then we have to apply WBackjump2 rule
+
   crl [WBackjump1] : M d(x) N d(y) CTX || WCS => M d(x) N l || WCS
     if existsDecisionLiteral(N) =/= true /\ C' := removeLiteralFromClause(l, C)
       /\ M d(x) N |= C' == false /\ M |= C' =/= false [nonexec]  .
@@ -41,11 +45,14 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
   
   rl [WForget] : M || WCS, WC, WCS' => M || WCS, WCS' .
 
-  rl [WRestart] : M || WCS => emptyCTX || WCS .
+  crl [WRestart] : M d(l) N || WCS => M || WCS if existsDecisionLiteral(M) =/= true .
 
   rl [WChangeWatchedClauseSet] : M || WCS => M || WCS' [nonexec] .
 
-  crl [WBackjump3] : M d(l) N || WCS => l M || WCS if existsDecisionLiteral(N) [nonexec] .
+  *** Case backjump clause have only one literal : we deduce that necessarily,
+  *** that literal must be satisfied. Therefore, it has to be added to level 0.
+
+  crl [WBackjump3] : M d(x) N || WCS => M l || WCS if existsDecisionLiteral(M) =/= true [nonexec] .
     
 
 endm

@@ -32,10 +32,22 @@ smod BERKMIN-STRATEGY is
     strat decide-literal : ConflictInfoSet BerkminInfo Nat Nat @ WatchedSequent .
     strat convert-watch-literal : BerkminInfo Nat @ BasicSequent .
 
-    sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, 550, NLiterals) := WLearn[C <- BackjumpClause] ; 
-        matchrew Seq s.t. (M x || WCS) := Seq /\ RestartInfo := restartTree(BI, WCS) /\
-        WCS' := 1st(RestartInfo) /\ BI' := 2nd(RestartInfo) by Seq using 
-        ( WRestart ; WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(emptyCIS, BI', 0, NLiterals) ) .
+    *** Case our backjump clause has only one literal: instead of learning it, 
+    *** we just apply rule wbackjump3, that places that literal at level 0, so it won't
+    *** be modified ever (even if we restart). Then we update CIS and BI, this last one using
+    *** a different function, as we don't have to count that we have learnt a clause. Besides,
+    *** we don't add one to NRestart, as we don't consider this to be a learnt clause.
+    sd fail-branch(l, l, ConflictClause, CIS, BI, NRestart, NLiterals) := 
+        WBackjump3[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
+        /\ BI' :=  updateBerkminInfoForBackjumpingOneClause(CTX, WCS, CIS, ConflictClause, l, BI)
+        by Seq using select-clauses(y, CIS', BI', NRestart, NLiterals) .
+
+    sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, 10, NLiterals) := WLearn[C <- BackjumpClause] ; 
+        WRestart ; matchrew Seq s.t. (M || WCS) := Seq /\ RestartInfo := restartTree(BI, M, WCS) /\
+        WCS' := 1st(RestartInfo) /\ BI' := 2nd(RestartInfo) /\
+        CIS' := generateConflictInfoSetFromBackjump(M, CIS, l) by Seq using 
+        ( WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(CIS', BI', 0, NLiterals) ) .
 
     sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, NRestart, NLiterals) :=  
         (WBackjump1[l <- l, C <- BackjumpClause] or-else 
@@ -72,8 +84,9 @@ smod BERKMIN-STRATEGY is
     sd decide-literal(CIS, BI, NRestart, NLiterals) := matchrew Seq s.t. (M || WCS) := Seq
         /\ ctxsize(M) < NLiterals
         /\ BI' := changeCurrentTopClauseForDecision(M, WCS, BI)
-        /\ l := chooseNextDecisionLiteral(M, BI')
-        by Seq using (WDecide[l <- l] ; success-decision(CIS, BI, NRestart, NLiterals)) or-else idle .
+        /\ BI' =/= failUpdateBerkminInfo
+        /\ l := chooseNextDecisionLiteral(M, BI') /\ l :: Literal
+        by Seq using (WDecide[l <- l] ; success-decision(CIS, BI', NRestart, NLiterals)) or-else idle .
 
     sd success-decision(CIS, BI, NRestart, NLiterals) := matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 
         /\ x := ~(l) by Seq using (select-clauses(x, CIS', BI, NRestart, NLiterals)) [label su] .

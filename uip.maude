@@ -69,6 +69,9 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
      *** and add the information generated from the negated UIP
      op generateConflictInfoSetFromBackjump : Context ConflictInfoSet Clause -> ConflictInfoSet .
 
+     *** Special case: if context if empty, this means we have restarted and no
+     *** literal is found at level 0. Therefore, the corresponding CIS is the empty one. 
+     eq generateConflictInfoSetFromBackjump(emptyCTX, CIS, C) = emptyCIS .
      eq generateConflictInfoSetFromBackjump(M x l, CIS (x -> C) Cis, C') = CIS (x -> C) (l -> C') .
      eq generateConflictInfoSetFromBackjump(M d(x) l, CIS (x -> C) Cis, C') = CIS (x -> C) (l -> C') .
 

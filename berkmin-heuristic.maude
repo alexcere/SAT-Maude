@@ -27,6 +27,7 @@ fmod BERKMIN-INFO is
   subsort ClauseScore < ClauseScoreList .
 
   op emptyCSL : -> ClauseScoreList .
+  op failUpdateBerkminInfo : -> BerkminInfo .
   
   op _:>_ : Clause Nat -> ClauseScore [prec 20] .
   op _,_ : ClauseScoreList ClauseScoreList -> ClauseScoreList [assoc id: emptyCSL prec 30] .
@@ -248,6 +249,8 @@ fmod BERKMIN-HEURISTIC is
       (WCS', C : TopClause, WCS'') := WCS /\
       ChangeTopClauseInfo := obtainCurrentTopClause(CTX, (C : TopClause, WCS''), ActualClauseIdx) /\
       NewTopClause := 1st(ChangeTopClauseInfo) /\ NewActualIdx := 2nd(ChangeTopClauseInfo) .
+  
+  eq changeCurrentTopClauseForDecision(CTX, WCS, BI) = failUpdateBerkminInfo [owise] .
 
   *** When the backjump Clause is generated, we have to update current top clause,
   *** var_activity, lit_activity, the number of clauses learnt (adding 1), current top
@@ -271,19 +274,34 @@ fmod BERKMIN-HEURISTIC is
       NewLitActivity := updateLitActivity(LitActivity, BackjumpClause) /\
       NewClauseActivity := (BackjumpClause :> 0 , updateClauseActivity(CS, ClauseActivity)) .
 
+  *** Same as before, but in case we have reached a backjump clause with only one literal,
+  *** the clause isn't learnt. Instead, we just update current top clause, var_activity and clause_activity .
+  op updateBerkminInfoForBackjumpingOneClause : Context WatchedClauseSet ConflictInfoSet Clause Clause BerkminInfo -> BerkminInfo .
+
+  ceq updateBerkminInfoForBackjumpingOneClause(CTX, WCS, CIS, ConflictClause, BackjumpClause, BI) = 
+    < NewVarActivity, LitActivity, NbTwo, NInitial, 
+    NLearnt, NewTopClause, NewActualIdx, NewClauseActivity, NActivityThreshold >
+    if < VarActivity, LitActivity, NbTwo, NInitial, NLearnt, TopClause, ActualClauseIdx, 
+      ClauseActivity, NActivityThreshold > := BI /\
+      ChangeTopClauseInfo := obtainCurrentTopClause(CTX, WCS, ( NInitial + NLearnt ) - 1) /\
+      NewTopClause := 1st(ChangeTopClauseInfo) /\ NewActualIdx := 2nd(ChangeTopClauseInfo) /\
+      CS :=  obtainIntermediateClausesBackjumping(CIS, ConflictClause, BackjumpClause) /\
+      NewVarActivity := updateVarActivity(VarActivity, (ConflictClause, CS)) /\
+      NewClauseActivity := updateClauseActivity(CS, ClauseActivity) .
 
   *** When restarting, we have to eliminate clauses following the Berkmin approach,
   *** update number of learnt clauses, activity threshold and current top clause and its index.
-  *** New current top corresponds to top of the stack and its associated index is NInitial + NewNLearnt - 1.
-  *** Activity threshold is incremented by 7
-  op restartTree : BerkminInfo WatchedClauseSet -> Pair{WatchedClauseSet, BerkminInfo} .
+  *** We still have to look for current top clause, as context may not be empty.
+  op restartTree : BerkminInfo Context WatchedClauseSet -> Pair{WatchedClauseSet, BerkminInfo} .
 
-  ceq restartTree(BI, WCS) = < (C' : C, WCS') ; BI' >
+  ceq restartTree(BI, CTX, WCS) = < WCS' ; BI' >
     if < VarActivity, LitActivity, NbTwo, NInitial, NLearnt, TopClause, ActualClauseIdx, 
     ClauseActivity, NActivityThreshold > := BI /\
     RestartInfo := eraseWatchedClauseSet(WCS, ClauseActivity, TopClause, NLearnt, 0, NActivityThreshold) /\
-    (C' : C , WCS') := 1st(RestartInfo) /\ NewNLearnt := 2nd(RestartInfo) /\
-    BI' := < VarActivity, LitActivity, NbTwo, NInitial, NewNLearnt, C, (NInitial + NewNLearnt) - 1 , 
+    WCS' := 1st(RestartInfo) /\ NewNLearnt := 2nd(RestartInfo) /\
+    ChangeTopClauseInfo := obtainCurrentTopClause(CTX, WCS, ( NInitial + NewNLearnt ) - 1) /\
+    NewTopClause := 1st(ChangeTopClauseInfo) /\ NewActualIdx := 2nd(ChangeTopClauseInfo) /\
+    BI' := < VarActivity, LitActivity, NbTwo, NInitial, NewNLearnt, NewTopClause, NewActualIdx , 
     ClauseActivity, NActivityThreshold + 7 > .
 
 endfm
