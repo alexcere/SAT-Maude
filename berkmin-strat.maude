@@ -34,11 +34,11 @@ smod BERKMIN-STRATEGY is
     strat decide-if-restart : Literal ConflictInfoSet BerkminInfo Nat @ WatchedSequent .
 
     
-    sd decide-if-restart(l, CIS, BI, 550) := 
+    sd decide-if-restart(l, CIS, BI, 150) := 
         WRestart ; matchrew Seq s.t. (M || WCS) := Seq /\ RestartInfo := restartTree(BI, M, WCS) /\
         WCS' := 1st(RestartInfo) /\ BI' := 2nd(RestartInfo) /\
         CIS' := generateConflictInfoSetFromBackjump(M, CIS, l) by Seq using 
-        ( WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(CIS', BI', 0) ) .
+        ( WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(CIS', BI', 1) ) .
 
     sd decide-if-restart(l, CIS, BI, NRestart) := 
         select-clauses(l, CIS, BI, NRestart + 1) .
@@ -96,7 +96,7 @@ smod BERKMIN-STRATEGY is
     sd success-decision(CIS, BI, NRestart) := matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 
         /\ x := ~(l) by Seq using (select-clauses(x, CIS', BI, NRestart)) [label su] .
 
-    sd convert-watch-literal(BI) := PreprocessClauseSet ; decide-literal(emptyCIS, BI, 0) [label cu] .
+    sd convert-watch-literal(BI) := PreprocessClauseSet ; decide-literal(emptyCIS, BI, 1) [label cu] .
 
     sd berkmin-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
         BI := initializeBerkmin(CS)

@@ -19,7 +19,6 @@ fmod WATCH-LITERAL is protecting LOGIC .
   var FC : WatchedClause .
   var WCS WCS' : WatchedClauseSet .
 
-
   op preprocessWatchedLiterals : ClauseSet -> WatchedClauseSet .
      
   eq preprocessWatchedLiterals(emptyCS) = emptyWCS .
