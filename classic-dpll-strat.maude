@@ -1,0 +1,18 @@
+***
+*** Simple strategy for applying CLASSIC-DPLL rules 
+*** Inspired in CDCL algorithm
+***
+
+sload classic-dpll
+
+smod CLASSIC-DPLL-STRATEGY is protecting CLASSIC-DPLL .
+
+     strats classic-dpll-strat basic-iteration success-branch :   @ BasicSequent .
+
+     sd basic-iteration := UnitPropagate ! ; Backtrack ? basic-iteration : (Fail or-else success-branch) .
+
+     sd success-branch := one(Decide) ? basic-iteration : idle .
+
+     sd classic-dpll-strat := PureLiteral ! ; basic-iteration .
+     
+endsm

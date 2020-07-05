@@ -1,9 +1,14 @@
+***
+*** Basic logic declarations and auxiliar operators.
+***
+
 fmod LOGIC is
     
 	protecting QID .
 	protecting FLOAT .
 	protecting NAT .
 
+	*** Logic hierarchy.
 	sorts Literal Context Clause ClauseSet BasicSequent Sequent .
 	
 	subsorts Qid < Literal < Context Clause < ClauseSet .
@@ -14,14 +19,17 @@ fmod LOGIC is
 	op failState : -> Sequent .
 	op [] : -> Clause .
 	
-	op d : Literal -> Literal .
-	op ~ : Literal -> Literal .
+	*** d is used to remark a decision literal
+	op d : Literal -> Literal [ctor] .
+
+	*** ~ is used for literal negation
+	op ~ : Literal -> Literal [ctor] .
 	
-	op __ : Context Context -> Context [assoc id: emptyCTX prec 30] .
-	op _,_ : ClauseSet ClauseSet -> ClauseSet [assoc comm id: emptyCS prec 30] .
-	op _\/_ : Clause Clause -> Clause [assoc comm id: ([]) prec 20] .
+	op __ : Context Context -> Context [ctor assoc id: emptyCTX prec 30] .
+	op _,_ : ClauseSet ClauseSet -> ClauseSet [ctor assoc comm id: emptyCS prec 30] .
+	op _\/_ : Clause Clause -> Clause [ctor assoc comm id: ([]) prec 20] .
 	
-	op _||_ : Context ClauseSet -> BasicSequent .
+	op _||_ : Context ClauseSet -> BasicSequent [ctor] .
 
 	var p : Qid .
 	var l u : Literal .
@@ -29,6 +37,7 @@ fmod LOGIC is
 	var C C' : Clause .
 	var CS : ClauseSet .
 
+    *** Equation for simplifying double negation
 	eq ~(~(l)) = l .
 	eq d(d(l)) = d(l) .
 	eq ~(d(l)) = d(~(l)) .
