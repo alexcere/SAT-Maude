@@ -1,8 +1,13 @@
-sload basic-dlpp
+***
+*** Strategy for applying BASIC-DPLL rules 
+*** Inspired in CDCL algorithm
+***
+
+sload basic-dpll
 sload uip 
 
-smod BASIC-DLPP-STRATEGY is 
-    pr DLPP-WITH-LEARNING .
+smod BASIC-DPLL-STRATEGY is 
+    pr DPLL-WITH-LEARNING .
     pr UNIQUE-IMPLICATION-POINT .
 
     var l x : Literal .
@@ -12,12 +17,12 @@ smod BASIC-DLPP-STRATEGY is
     var M CTX N : Context .
     var CIS CIS' : ConflictInfoSet .
 
-    strat basic-strat :   @ BasicSequent .
+    strat basic-dpll-strat :   @ BasicSequent .
     strats decide-if-fails propagate success-branch : ConflictInfoSet @ BasicSequent .
     strat fail-branch : Literal Clause Clause ConflictInfoSet @ BasicSequent .
 
-    sd fail-branch(l, C, C', CIS) :=  (BackjumpWithSeveralDecisions[l <- l, C <- C, C' <- C'] or-else 
-        BackjumpWithOneDecision[C <- C]) ? (Learn[C <- C'] ; 
+    sd fail-branch(l, C, C', CIS) :=  (BackjumpWithSeveralDecisions[l <- l, C <- C, C' <- C'] |
+        BackjumpWithOneDecision[C <- C, l <- l, C' <- C']) ? (Learn[C <- C'] ; 
         matchrew Seq s.t. (M || CS) := Seq /\ CIS' := generateConflictInfoSetFromBackjump(M, CIS, C') 
         by Seq using propagate(CIS')) : Fail [label fb] .
 
@@ -33,6 +38,6 @@ smod BASIC-DLPP-STRATEGY is
     sd success-branch(CIS) := one(Decide) ? matchrew Seq' s.t. (N d(l) || CS) := Seq' /\ CIS' := (CIS l -> []) by Seq'
         using (propagate(CIS')) : idle [label suc] .
 
-    sd basic-strat := PureLiteral ! ; propagate(emptyCIS) .
+    sd basic-dpll-strat := PureLiteral ! ; propagate(emptyCIS) .
      
 endsm

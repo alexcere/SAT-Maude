@@ -1,7 +1,15 @@
+***
+*** Modern DPLL inference rules.
+*** Taken directly from 
+*** Solving SAT and SAT Modulo Theories: from an
+*** Abstract Davis-Putnam-Logemann-Loveland
+*** Procedure to DPLL(T)
+***
+
 sload logic
 sload uip
 
-mod BASIC-DLPP is 
+mod BASIC-DPLL is 
 	pr LOGIC .
 	pr UNIQUE-IMPLICATION-POINT .
 
@@ -37,16 +45,19 @@ mod BASIC-DLPP is
 	    => M d(x) N l || CS,C
 	    if (M d(x) N d(y) CTX) |= C == false /\ existsDecisionLiteral(N) =/= true 
 		/\ C'' := removeLiteralFromClause(l, C')
-	    /\ M d(x) N |= C''  == false /\ M |= C'' =/= false [nonexec] .
+	    /\ M d(x) N |= C''  == false /\ M |= C'' =/= false 
+		/\ definedLiteral(l, M d(x) N) =/= true [nonexec] .
 
-	*** If only one decision has been taken, we just undo that decision.
-	*** The backjump clause in this case is the literal decision.
-	crl [BackjumpWithOneDecision] : M d(x) N || C,CS => M ~(x) || C,CS
+	*** If we have to backjump to first level, we just undo first decision.
+	crl [BackjumpWithOneDecision] : M d(x) N || C,CS => M l || C,CS
 	    if M d(x) N |= C == false
-	    /\ existsDecisionLiteral(M) =/= true . 
+	    /\ existsDecisionLiteral(M) =/= true 
+		/\ C'' := removeLiteralFromClause(l, C') 
+		/\ M |= C'' == false 
+		/\ definedLiteral(l, M) =/= true [nonexec] . 
 endm
 
-mod DLPP-WITH-LEARNING is protecting BASIC-DLPP .
+mod DPLL-WITH-LEARNING is protecting BASIC-DPLL .
 
     var M : Context .
     var C : Clause .
@@ -58,7 +69,7 @@ mod DLPP-WITH-LEARNING is protecting BASIC-DLPP .
 
 endm
 
-mod MODERN-DLPP is protecting DLPP-WITH-LEARNING .
+mod MODERN-DPLL is protecting DPLL-WITH-LEARNING .
 
     var M : Context .
     var CS : ClauseSet .

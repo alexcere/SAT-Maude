@@ -17,8 +17,8 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
 
      op emptyCIS : -> ConflictInfoSet .
 
-     op _->_ : Literal Clause -> ConflictInfo [prec 22] .
-     op __ : ConflictInfoSet ConflictInfoSet -> ConflictInfoSet [assoc id: emptyCIS prec 30] .
+     op _->_ : Literal Clause -> ConflictInfo [ctor prec 22] .
+     op __ : ConflictInfoSet ConflictInfoSet -> ConflictInfoSet [ctor assoc id: emptyCIS prec 30] .
 
      var CIS Cis : ConflictInfoSet .
      var l x y : Literal .
@@ -44,8 +44,10 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
      op obtainBackjumpClause : ConflictInfoSet Clause -> Clause .
      
      ceq obtainBackjumpClause(CIS, C) = C if literalsInLevel(CIS,C) == 1 .
-     eq obtainBackjumpClause(CIS l -> (C \/ l) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) .
-     eq obtainBackjumpClause(CIS ~(l) -> (C \/ ~(l)), l \/ D) = obtainBackjumpClause(CIS, C \/ D) .
+     ceq obtainBackjumpClause(CIS l -> (C \/ l) , ~(l) \/ D) = obtainBackjumpClause(CIS, C \/ D) 
+       if literalsInLevel(CIS l -> (C \/ l), ~(l) \/ D) =/= 1 .
+     ceq obtainBackjumpClause(CIS ~(l) -> (C \/ ~(l)), l \/ D) = obtainBackjumpClause(CIS, C \/ D) 
+       if literalsInLevel(CIS ~(l) -> (C \/ ~(l)), l \/ D) =/= 1 .
      eq obtainBackjumpClause(CIS l -> C, D) = obtainBackjumpClause(CIS, D) [owise] .
 
      *** The UIP is the literal negated in the conflict clause that belongs

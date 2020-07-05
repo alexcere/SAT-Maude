@@ -117,7 +117,7 @@ fmod LOGIC is
 	op literalToVariable : Literal -> Literal .
 
 	eq literalToVariable(~(l)) = l .
-	eq literalToVariable(l) = l .
+	eq literalToVariable(l) = l [owise] .
 
 	*** Given a clause that contain several literals, we obtain
   	*** its representation with variables instead: we change each negated
