@@ -37,9 +37,9 @@ smod VSIDS-HEURISTIC-STRATEGY is
     strat convert-watch-literal : ScorePairList @ BasicSequent .
 
     sd fail-branch(l, l, CIS, CurrentLiterals, ScoredLiterals, N) := 
-        WBackjump2[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ? matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
-        by Seq using select-clauses(y, CIS', ScoredLiterals, ScoredLiterals, N) .
+        by Seq using select-clauses(y, CIS', ScoredLiterals, ScoredLiterals, N) : WFail .
 
     sd fail-branch(l, C, CIS, CurrentLiterals, ScoredLiterals, N) :=  
         (WBackjump1[l <- l, C <- C] or-else 

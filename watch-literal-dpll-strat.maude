@@ -35,9 +35,9 @@ smod WATCH-LITERAL-DPLL-STRATEGY is
     strat convert-watch-literal : ScorePairList @ BasicSequent .
 
     sd fail-branch(l, l, CIS, LiteralSet) := 
-        WBackjump2[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ? matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
-        by Seq using select-clauses(y, CIS', LiteralSet) .
+        by Seq using select-clauses(y, CIS', LiteralSet) : WFail .
 
     sd fail-branch(l, C, CIS, LiteralSet) :=  (WBackjump1[l <- l, C <- C] or-else 
         WBackjump2[l <- l]) ? (WLearn[C <- C] ; 

@@ -44,8 +44,9 @@ smod BERKMIN-STRATEGY is
         CIS' := generateConflictInfoSetFromBackjump(M, CIS, l) by Seq using 
         ( WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(CIS', BI', 1) ) .
 
-    sd decide-if-restart(l, CIS, BI, NRestart) := 
-        select-clauses(l, CIS, BI, NRestart + 1) .
+    csd decide-if-restart(l, CIS, BI, NRestart) := 
+        select-clauses(l, CIS, BI, NRestart + 1) 
+        if NRestart < 150 .
 
 
     *** Case backjump clause has only one literal: instead of learning it, 
@@ -54,10 +55,10 @@ smod BERKMIN-STRATEGY is
     *** a different function, as we don't have to count that we have learnt a clause. Besides,
     *** we don't add one to NRestart, as we don't consider this to be a learnt clause.
     sd fail-branch(l, l, ConflictClause, CIS, BI, NRestart) := 
-        WBackjump2[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ? matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
         /\ BI' :=  updateBerkminInfoForBackjumpingOneClause(CTX, WCS, CIS, ConflictClause, l, BI)
-        by Seq using select-clauses(y, CIS', BI', NRestart) .
+        by Seq using select-clauses(y, CIS', BI', NRestart) : WFail .
 
     sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, NRestart) :=  
         (WBackjump1[l <- l, C <- BackjumpClause] or-else 
