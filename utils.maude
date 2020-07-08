@@ -1,3 +1,8 @@
+***
+*** Basic declarations for pair and triple modules
+*** 
+
+
 fmod PAIR{X :: TRIV, Y :: TRIV} is
   sort Pair{X, Y} .
   op <_;_> : X$Elt Y$Elt -> Pair{X, Y} .

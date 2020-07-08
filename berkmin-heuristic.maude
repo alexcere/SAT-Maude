@@ -1,3 +1,11 @@
+***
+*** Functional module that contains all needed 
+*** declarations for simulating Berkmin Solver.
+*** Note that BERKMIN-INFO contains auxiliar operators
+*** for BERKMIN-HEURISTIC, which contains all the operators
+*** that are called directly from the strategy module.
+***
+
 sload scored-heuristic
 sload uip
 sload watch-literal

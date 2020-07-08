@@ -1,3 +1,9 @@
+***
+*** Functional module that contains basic
+*** operations for any score-based heuristic
+***
+
+
 sload logic
 
 fmod SCORED-HEURISTIC is
@@ -9,8 +15,8 @@ fmod SCORED-HEURISTIC is
 
   op emptySPL : -> ScorePairList .
   
-  op _:|_ : Literal Float -> ScorePair [prec 20].
-  op _,_ : ScorePairList  ScorePairList -> ScorePairList [assoc id: emptySPL prec 30] .
+  op _:|_ : Literal Float -> ScorePair [ctor prec 20].
+  op _,_ : ScorePairList  ScorePairList -> ScorePairList [ctor assoc id: emptySPL prec 30] .
 
   var N M N1 N2 : Float .
   var l l1 l2 : Literal .

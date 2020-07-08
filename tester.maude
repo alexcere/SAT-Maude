@@ -1,3 +1,10 @@
+***
+*** Ecuations for checking whether a final context satisfies
+*** or not the initial formula. Takes into account that some clauses
+*** may not be satisfied due to WPureLiteral rule.
+***
+
+
 sload watch-literal
 
 fmod TESTER is pr WATCH-LITERAL .
