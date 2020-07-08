@@ -1,9 +1,13 @@
-sload watch-literal-dlpp
+***
+*** Strategy that emulates Berkmin SAT Solver.
+***
+
+sload watch-literal-dpll
 sload berkmin-heuristic
 sload scored-heuristic
 
 smod BERKMIN-STRATEGY is 
-    pr WATCH-LITERAL-DLPP .
+    pr WATCH-LITERAL-DPLL .
     pr UNIQUE-IMPLICATION-POINT .
     pr BERKMIN-HEURISTIC .
     pr FLOAT .
@@ -44,24 +48,24 @@ smod BERKMIN-STRATEGY is
         select-clauses(l, CIS, BI, NRestart + 1) .
 
 
-    *** Case our backjump clause has only one literal: instead of learning it, 
-    *** we just apply rule wbackjump3, that places that literal at level 0, so it won't
+    *** Case backjump clause has only one literal: instead of learning it, 
+    *** we just apply rule wbackjump2, that places that literal at level 0, so it won't
     *** be modified ever (even if we restart). Then we update CIS and BI, this last one using
     *** a different function, as we don't have to count that we have learnt a clause. Besides,
     *** we don't add one to NRestart, as we don't consider this to be a learnt clause.
     sd fail-branch(l, l, ConflictClause, CIS, BI, NRestart) := 
-        WBackjump3[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
         /\ BI' :=  updateBerkminInfoForBackjumpingOneClause(CTX, WCS, CIS, ConflictClause, l, BI)
         by Seq using select-clauses(y, CIS', BI', NRestart) .
 
     sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, NRestart) :=  
         (WBackjump1[l <- l, C <- BackjumpClause] or-else 
-        WBackjump2) ? (WLearn[C <- BackjumpClause] ; 
+        WBackjump2[l <- l]) ? (WLearn[C <- BackjumpClause] ; 
         matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, BackjumpClause)
         /\ BI' :=  updateBerkminInfoForBackjumping(CTX, WCS, CIS, ConflictClause, BackjumpClause, BI)
-        by Seq using decide-if-restart(y, CIS', BI', NRestart)) : WFail [label fb] .
+        by Seq using decide-if-restart(y, CIS', BI', NRestart)) : WFail .
 
     sd generate-failure-info(CIS, ConflictClause, BI, NRestart) := matchrew Seq s.t. (M || WCS) := Seq 
         /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
@@ -94,9 +98,9 @@ smod BERKMIN-STRATEGY is
         by Seq using (WDecide[l <- l] ; success-decision(CIS, BI', NRestart)) or-else idle .
 
     sd success-decision(CIS, BI, NRestart) := matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 
-        /\ x := ~(l) by Seq using (select-clauses(x, CIS', BI, NRestart)) [label su] .
+        /\ x := ~(l) by Seq using (select-clauses(x, CIS', BI, NRestart)) .
 
-    sd convert-watch-literal(BI) := PreprocessClauseSet ; decide-literal(emptyCIS, BI, 1) [label cu] .
+    sd convert-watch-literal(BI) := PreprocessClauseSet ; decide-literal(emptyCIS, BI, 1) .
 
     sd berkmin-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
         BI := initializeBerkmin(CS)

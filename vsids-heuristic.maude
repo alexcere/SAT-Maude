@@ -1,3 +1,7 @@
+***
+*** Equations used for performing VSIDS heuristic
+***
+
 sload scored-heuristic
 
 fmod VSIDS-HEURISTIC is

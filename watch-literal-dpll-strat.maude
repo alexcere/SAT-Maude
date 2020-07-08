@@ -1,9 +1,14 @@
-sload watch-literal-dlpp
+*** 
+*** Strategy for solving SAT using WATCH-LITERAL-DLPP
+*** inference rules. It is based on CDCL algorithm.
+***
+
+sload watch-literal-dpll
 sload uip 
 sload scored-heuristic
 
-smod WATCH-LITERAL-DLPP-STRATEGY is 
-    pr WATCH-LITERAL-DLPP .
+smod WATCH-LITERAL-DPLL-STRATEGY is 
+    pr WATCH-LITERAL-DPLL .
     pr UNIQUE-IMPLICATION-POINT .
     pr SCORED-HEURISTIC .
     pr FLOAT .
@@ -20,7 +25,7 @@ smod WATCH-LITERAL-DLPP-STRATEGY is
     var Seq' : BasicSequent .
     var CIS CIS' : ConflictInfoSet .
 
-    strat watch-literal-strat :   @ BasicSequent .
+    strat watch-literal-dpll-strat :   @ BasicSequent .
     strat fail-branch : Literal Clause ConflictInfoSet ScorePairList @ WatchedSequent .
     strat propagate : Context ConflictInfoSet ClauseSet ScorePairList @ WatchedSequent .
     strat generate-failure-info : ConflictInfoSet Clause ScorePairList @ WatchedSequent .
@@ -30,15 +35,15 @@ smod WATCH-LITERAL-DLPP-STRATEGY is
     strat convert-watch-literal : ScorePairList @ BasicSequent .
 
     sd fail-branch(l, l, CIS, LiteralSet) := 
-        WBackjump3[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ; matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
         by Seq using select-clauses(y, CIS', LiteralSet) .
 
     sd fail-branch(l, C, CIS, LiteralSet) :=  (WBackjump1[l <- l, C <- C] or-else 
-        WBackjump2) ? (WLearn[C <- C] ; 
+        WBackjump2[l <- l]) ? (WLearn[C <- C] ; 
         matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, C) 
-        by Seq using select-clauses(y, CIS', LiteralSet)) : WFail [label fb] .
+        by Seq using select-clauses(y, CIS', LiteralSet)) : WFail .
 
     sd generate-failure-info(CIS, C, LiteralSet) := matchrew Seq s.t. (M || WCS) := Seq 
         /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
@@ -71,7 +76,7 @@ smod WATCH-LITERAL-DLPP-STRATEGY is
 
     sd convert-watch-literal(LiteralSet) := PreprocessClauseSet ; success-branch(emptyCIS, LiteralSet) .
 
-    sd watch-literal-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
+    sd watch-literal-dpll-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
         LiteralSet := obtainInitialScoreList(CS) by Seq' using convert-watch-literal(LiteralSet) .
      
 endsm

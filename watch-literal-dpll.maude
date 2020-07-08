@@ -1,6 +1,13 @@
+***
+*** System module containing all the necessary information
+*** for performing DPLL with learning and watch-literal. Note
+*** that rule inference system isn't complete, so we need to
+*** apply it with the proper strategies
+***
+
 sload watch-literal
 
-mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
+mod WATCH-LITERAL-DPLL is protecting WATCH-LITERAL .
 
   var l x y : Literal .
   var M N CTX : Context .
@@ -36,7 +43,9 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
     if existsDecisionLiteral(N) =/= true /\ C' := removeLiteralFromClause(l, C)
       /\ M d(x) N |= C' == false /\ M |= C' =/= false [nonexec]  .
 
-  crl [WBackjump2] : M d(x) N || WCS => M ~(x) || WCS if existsDecisionLiteral(M) =/= true .
+  *** Case we jump to first level
+
+  crl [WBackjump2] : M d(x) N || WCS => M l || WCS if existsDecisionLiteral(M) =/= true [nonexec] .
 
   crl [WFail] : M || WCS => failState if existsDecisionLiteral(M) =/= true .
 
@@ -47,12 +56,8 @@ mod WATCH-LITERAL-DLPP is protecting WATCH-LITERAL .
 
   crl [WRestart] : M d(l) N || WCS => M || WCS if existsDecisionLiteral(M) =/= true .
 
+  *** Rule for deleting several clauses at the same time
+
   rl [WChangeWatchedClauseSet] : M || WCS => M || WCS' [nonexec] .
-
-  *** Case backjump clause have only one literal : we deduce that necessarily,
-  *** that literal must be satisfied. Therefore, it has to be added to level 0.
-
-  crl [WBackjump3] : M d(x) N || WCS => M l || WCS if existsDecisionLiteral(M) =/= true [nonexec] .
-    
 
 endm

@@ -1,8 +1,13 @@
+*** 
+*** Strategy that uses JW heuristic
+*** for deciding literals.
+*** 
+
 sload jw-heuristic
-sload watch-literal-dlpp-strat
+sload watch-literal-dpll-strat
 
 smod JW-HEURISTIC-STRATEGY is 
-    pr WATCH-LITERAL-DLPP-STRATEGY .
+    pr WATCH-LITERAL-DPLL-STRATEGY .
     pr JW-HEURISTIC .
 
     var M : Context .

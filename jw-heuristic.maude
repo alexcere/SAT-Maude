@@ -1,3 +1,8 @@
+***
+*** Equations used for performing JW Heuristic
+*** 
+
+
 sload scored-heuristic
 
 fmod JW-HEURISTIC is
