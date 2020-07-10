@@ -14,10 +14,10 @@ fmod LOGIC is
 	subsorts Qid < Literal < Context Clause < ClauseSet .
 	subsort BasicSequent < Sequent .
 
-	op emptyCTX : -> Context .
-	op emptyCS : -> ClauseSet .
-	op failState : -> Sequent .
-	op [] : -> Clause .
+	op emptyCTX : -> Context [ctor] .
+	op emptyCS : -> ClauseSet [ctor] .
+	op failState : -> Sequent [ctor] .
+	op [] : -> Clause [ctor] .
 	
 	*** d is used to remark a decision literal
 	op d : Literal -> Literal [ctor] .
@@ -42,15 +42,17 @@ fmod LOGIC is
 	eq d(d(l)) = d(l) .
 	eq ~(d(l)) = d(~(l)) .
 
-	op _in_ : Literal ClauseSet -> [Bool] .
+	op _in_ : Literal ClauseSet -> Bool .
 	
 	eq l in (l \/ C), CS = true .
 	eq d(l) in (l \/ C), CS = true .
+	eq l in CS = false [owise] .
 
-	op _in_ : Literal Context -> [Bool] .
+	op _in_ : Literal Context -> Bool .
 
 	eq l in M l N = true .
 	eq l in M d(l) N = true .
+	eq l in M = false [owise] .
 
 	eq [contraction] : C,C = C .
 	eq l \/ l \/ C = l \/ C .
@@ -85,14 +87,14 @@ fmod LOGIC is
 	eq CTX |= [] = false .
 	eq M l N |= l \/ C = true .
 	eq M d(l) N |= l \/ C = true .
-	eq M ~(l) N |= l \/ C = M N |= C .
-	eq M l N |= ~(l) \/ C = M N |= C .
-	eq M d(~(l)) N |= l \/ C = M N |= C .
-	eq M d(l) N |= ~(l) \/ C = M N |= C .
+	eq M ~(l) N |= l \/ C = M ~(l) N |= C .
+	eq M l N |= ~(l) \/ C = M l N |= C .
+	eq M d(~(l)) N |= l \/ C = M d(~(l)) N |= C .
+	eq M d(l) N |= ~(l) \/ C = M d(l) N |= C .
 
 	*** A literal z is defined in a context
 	*** if z or ~z appear in the context 
-	op definedLiteral : Literal Context -> [Bool] .
+	op definedLiteral : Literal Context -> Bool .
 
 	eq definedLiteral(l, (M l CTX)) = true .
 	eq definedLiteral(l, (M ~(l) CTX)) = true .
@@ -100,12 +102,14 @@ fmod LOGIC is
 	eq definedLiteral(l, (M d(~(l)) CTX)) = true .
 	eq definedLiteral(~(l), (M d(l) CTX)) = true .
 	eq definedLiteral(l, (M d(l) CTX)) = true .
+	eq definedLiteral(l, M) = false [owise] .
 
 	*** A decision literal exists in a Context
 	*** if there is some literal of the form d(l)
-	op existsDecisionLiteral : Context -> [Bool] .
+	op existsDecisionLiteral : Context -> Bool .
 
 	eq existsDecisionLiteral(M d(l) N) = true .
+	eq existsDecisionLiteral(M) = false [owise] .
 
 	*** Remove a literal that belongs to a clause.
 	op removeLiteralFromClause : Literal Clause -> Clause .
