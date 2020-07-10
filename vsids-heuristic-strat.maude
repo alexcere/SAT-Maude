@@ -81,8 +81,8 @@ smod VSIDS-HEURISTIC-STRATEGY is
         matchrew Seq s.t. M || WCS := Seq /\ NewScoredLiterals := decaySum(ScoredLiterals)
         by Seq using success-branch(CIS, NewScoredLiterals, NewScoredLiterals, 0) .
         
-    sd decide-if-sum-decay(CIS, CurrentLiterals, ScoredLiterals, N) :=
-        success-branch(CIS, CurrentLiterals, ScoredLiterals, N + 1) . 
+    csd decide-if-sum-decay(CIS, CurrentLiterals, ScoredLiterals, N) :=
+        success-branch(CIS, CurrentLiterals, ScoredLiterals, N + 1) if N < 100 . 
 
     sd decide-literal(CIS, emptySPL, ScoredLiterals, N) := idle .
 

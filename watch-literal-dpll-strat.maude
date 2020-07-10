@@ -72,7 +72,7 @@ smod WATCH-LITERAL-DPLL-STRATEGY is
 
     sd success-branch(CIS, LiteralSet) := decide-literal(LiteralSet) ? 
         matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 
-        /\ x := ~(l) by Seq using (select-clauses(x, CIS', LiteralSet)) : idle [label suc] .
+        /\ x := ~(l) by Seq using (select-clauses(x, CIS', LiteralSet)) : idle .
 
     sd convert-watch-literal(LiteralSet) := PreprocessClauseSet ; success-branch(emptyCIS, LiteralSet) .
 
