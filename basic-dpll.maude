@@ -20,20 +20,19 @@ mod BASIC-DPLL is
 	var CS : ClauseSet .
 
     crl [UnitPropagate] : M || (l \/ C), CS => M l || (l \/ C), CS
-	    if M |= C == false /\ definedLiteral(l, M) =/= true .
+	    if M |= C = false /\ definedLiteral(l, M) = false .
 
 	crl [PureLiteral] : M || (l \/ C), CS => M l || (l \/ C), CS 
-	    if (~(l) in CS) =/= true /\ definedLiteral(l,M) =/= true .
+	    if (~(l) in CS) = false /\ definedLiteral(l,M) = false .
  
 	crl [Decide] : M || (l \/ C),CS => M d(l) || (l \/ C),CS 
-	    if definedLiteral(l,M) =/= true .
+	    if definedLiteral(l,M) = false .
 
 	crl [Fail] : M || CS,C => failState if M |= C == false
-	    /\ existsDecisionLiteral(M) =/= true .
+	    /\ existsDecisionLiteral(M) = false .
 
 	*** In order to guarantee that we backjump to the lowest possible
-	*** level, we are separating Backjump in two rules, separating
-	*** the cases with just one decision clause and the rest.
+	*** level, we are separating Backjump in two rules.
 
 	*** If we have several decision literals along the context,
 	*** the lowest level we can jump to
@@ -41,20 +40,20 @@ mod BASIC-DPLL is
 	*** it is verified that the backjump clause's only free
 	*** literal is the UIP.
 	*** l is the negated UIP, and C' is the backjump clause.
-	crl [BackjumpWithSeveralDecisions] : M d(x) N d(y) CTX || CS, C
+	crl [Backjump1] : M d(x) N d(y) CTX || CS, C
 	    => M d(x) N l || CS,C
-	    if (M d(x) N d(y) CTX) |= C == false /\ existsDecisionLiteral(N) =/= true 
+	    if (M d(x) N d(y) CTX) |= C == false /\ existsDecisionLiteral(N) = false 
 		/\ C'' := removeLiteralFromClause(l, C')
 	    /\ M d(x) N |= C''  == false /\ M |= C'' =/= false 
-		/\ definedLiteral(l, M d(x) N) =/= true [nonexec] .
+		/\ definedLiteral(l, M d(x) N) = false [nonexec] .
 
 	*** If we have to backjump to first level, we just undo first decision.
-	crl [BackjumpWithOneDecision] : M d(x) N || C,CS => M l || C,CS
+	crl [Backjump2] : M d(x) N || C,CS => M l || C,CS
 	    if M d(x) N |= C == false
-	    /\ existsDecisionLiteral(M) =/= true 
+	    /\ existsDecisionLiteral(M) = false 
 		/\ C'' := removeLiteralFromClause(l, C') 
 		/\ M |= C'' == false 
-		/\ definedLiteral(l, M) =/= true [nonexec] . 
+		/\ definedLiteral(l, M) = false [nonexec] . 
 endm
 
 mod DPLL-WITH-LEARNING is protecting BASIC-DPLL .

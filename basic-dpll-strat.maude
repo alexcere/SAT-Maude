@@ -21,8 +21,8 @@ smod BASIC-DPLL-STRATEGY is
     strats decide-if-fails propagate success-branch : ConflictInfoSet @ BasicSequent .
     strat fail-branch : Literal Clause Clause ConflictInfoSet @ BasicSequent .
 
-    sd fail-branch(l, C, C', CIS) :=  (BackjumpWithSeveralDecisions[l <- l, C <- C, C' <- C'] |
-        BackjumpWithOneDecision[C <- C, l <- l, C' <- C']) ? (Learn[C <- C'] ; 
+    sd fail-branch(l, C, C', CIS) :=  (Backjump1[l <- l, C <- C, C' <- C'] |
+        Backjump2[C <- C, l <- l, C' <- C']) ? (Learn[C <- C'] ; 
         matchrew Seq s.t. (M || CS) := Seq /\ CIS' := generateConflictInfoSetFromBackjump(M, CIS, C') 
         by Seq using propagate(CIS')) : Fail .
 
@@ -32,7 +32,7 @@ smod BASIC-DPLL-STRATEGY is
         by Seq using (fail-branch(l, C, C', CIS)) or-else success-branch(CIS) .
 
     sd propagate(CIS) := (matchrew Seq s.t. CTX || (l \/ C), CS := Seq 
-        /\ CTX |= C == false /\ definedLiteral(l, CTX) =/= true /\  CIS' := CIS l -> (l \/ C) 
+        /\ CTX |= C == false /\ definedLiteral(l, CTX) = false /\  CIS' := CIS l -> (l \/ C) 
         by Seq using (UnitPropagate[l <- l, C <- C]; propagate(CIS'))) or-else decide-if-fails(CIS) [label pro] .
 
     sd success-branch(CIS) := one(Decide) ? matchrew Seq' s.t. (N d(l) || CS) := Seq' /\ CIS' := (CIS l -> []) by Seq'

@@ -53,8 +53,8 @@ smod WATCH-LITERAL-DPLL-STRATEGY is
     sd propagate(l CTX, CIS, emptyCS, LiteralSet) := select-clauses(CTX, CIS, LiteralSet) .
 
     sd propagate(l CTX, CIS, (C, CS), LiteralSet) := 
-        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M =/= true /\
-        x in M =/= true /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
+        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M = false /\
+        x in M = false /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
         CIS' := (CIS x -> C) /\ y := ~(x) 
         by Seq using
         ((WUpdateClause[C <- C, WC <- WC] ; propagate(l CTX, CIS, CS, LiteralSet)) or-else 

@@ -21,40 +21,40 @@ mod WATCH-LITERAL-DPLL is protecting WATCH-LITERAL .
   *** literals that are directly satisfied as no negation appears in any
   *** other clause.
   crl [WPureLiteral] : M || (l \/ C), CS => M || CS
-   if (~(l) in CS) =/= true /\ definedLiteral(l,M) =/= true .  
+   if (~(l) in CS) = false /\ definedLiteral(l,M) = false .  
   
 
   crl [PreprocessClauseSet] : M || CS => M || WCS if WCS := preprocessWatchedLiterals(CS)  .
 
   crl [WUnitPropagate] :  M || WCS => M x || WCS 
-    if definedLiteral(x,M) =/= true [nonexec] .
+    if definedLiteral(x,M) = false [nonexec] .
 
   crl [WUpdateClause] : M || WCS, C' : C , WCS' => M || WCS, WC, WCS'
     if C'' : C := WC  [nonexec] .
 
   crl [WDecide] : M || WCS => M d(l) || WCS
-    if definedLiteral(l,M) =/= true [nonexec] .
+    if definedLiteral(l,M) = false [nonexec] .
 
   *** We try to jump to the lowest level possible: this level verifies that
-  *** M d(x) N |= C' but M |= C' == false. If M |= C == true for M without decision
+  *** M d(x) N |= C' but M |= C' = false. If M |= C = true for M without decision
   *** literals, then we have to apply WBackjump2 rule
 
   crl [WBackjump1] : M d(x) N d(y) CTX || WCS => M d(x) N l || WCS
-    if existsDecisionLiteral(N) =/= true /\ C' := removeLiteralFromClause(l, C)
-      /\ M d(x) N |= C' == false /\ M |= C' =/= false [nonexec]  .
+    if existsDecisionLiteral(N) = false /\ C' := removeLiteralFromClause(l, C)
+      /\ M d(x) N |= C' = false /\ M |= C' =/= false [nonexec]  .
 
   *** Case we jump to first level
 
-  crl [WBackjump2] : M d(x) N || WCS => M l || WCS if existsDecisionLiteral(M) =/= true [nonexec] .
+  crl [WBackjump2] : M d(x) N || WCS => M l || WCS if existsDecisionLiteral(M) = false [nonexec] .
 
-  crl [WFail] : M || WCS => failState if existsDecisionLiteral(M) =/= true .
+  crl [WFail] : M || WCS => failState if existsDecisionLiteral(M) = false .
 
   crl [WLearn] : M || WCS => M || WC , WCS
     if WC := obtainValidWatchedLiterals(C, M) [nonexec] .
   
   rl [WForget] : M || WCS, WC, WCS' => M || WCS, WCS' .
 
-  crl [WRestart] : M d(l) N || WCS => M || WCS if existsDecisionLiteral(M) =/= true .
+  crl [WRestart] : M d(l) N || WCS => M || WCS if existsDecisionLiteral(M) = false .
 
   *** Rule for deleting several clauses at the same time
 
