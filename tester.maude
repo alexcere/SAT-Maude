@@ -19,12 +19,12 @@ fmod TESTER is pr WATCH-LITERAL .
 
     eq reduceBasicSequent(M || emptyCS) = true .
     ceq reduceBasicSequent(M || C, CS) = reduceBasicSequent(M || CS) if M |= C .
-    ceq reduceBasicSequent(M || (l \/ C) , CS) = reduceBasicSequent(M || CS) if definedLiteral(l, C) =/= true .
+    ceq reduceBasicSequent(M || (l \/ C) , CS) = reduceBasicSequent(M || CS) if definedLiteral(l, C) = false .
 
     op reduceWatchedSequent : WatchedSequent -> [Bool] .
 
     eq reduceWatchedSequent(M || emptyWCS) = true .
     ceq reduceWatchedSequent(M || C' : C, WCS) = reduceWatchedSequent(M || WCS) if M |= C .
-    ceq reduceBasicSequent(M || C' : (l \/ C) , WCS) = reduceBasicSequent(M || WCS) if definedLiteral(l, C) =/= true .
+    ceq reduceBasicSequent(M || C' : (l \/ C) , WCS) = reduceBasicSequent(M || WCS) if definedLiteral(l, C) = false .
 
 endfm

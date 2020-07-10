@@ -18,19 +18,19 @@ mod CLASSIC-DPLL is protecting LOGIC .
 
 	
 	crl [UnitPropagate] : M || (l \/ C), F => M l || (l \/ C), F
-		if M |= C == false /\ definedLiteral(l, M) =/= true .
+		if M |= C = false /\ definedLiteral(l, M) = false .
 
 	crl [PureLiteral] : M || (l \/ C), F => M l || (l \/ C), F 
-		if (~(l) in F) =/= true /\ definedLiteral(l,M) =/= true .
+		if (~(l) in F) = false /\ definedLiteral(l,M) = false .
  
 	crl [Decide] : M || (l \/ C),F => M d(l) || (l \/ C),F 
-		if definedLiteral(l,M) =/= true .
+		if definedLiteral(l,M) = false .
 
-	crl [Fail] : M || F,C => failState if M |= C == false
-		/\ existsDecisionLiteral(M) =/= true .
+	crl [Fail] : M || F,C => failState if M |= C = false
+		/\ existsDecisionLiteral(M) = false .
 
 	crl [Backtrack] : M d(l) N || F,C => M ~(l) || F,C if
-	    	M d(l) N |= C == false /\
-		existsDecisionLiteral(N) =/= true .
+	    M d(l) N |= C = false /\
+		existsDecisionLiteral(N) = false .
 
 endm

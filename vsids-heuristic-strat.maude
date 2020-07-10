@@ -59,8 +59,8 @@ smod VSIDS-HEURISTIC-STRATEGY is
         select-clauses(CTX, CIS, CurrentLiterals, ScoredLiterals, N) .
 
     sd propagate(l CTX, CIS, (C, CS), CurrentLiterals, ScoredLiterals, N) := 
-        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M =/= true /\
-        x in M =/= true /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
+        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M = false /\
+        x in M = false /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
         CIS' := (CIS x -> C) /\ y := ~(x) 
         by Seq using
         ((WUpdateClause[C <- C, WC <- WC] ; 

@@ -77,8 +77,8 @@ smod BERKMIN-STRATEGY is
     sd propagate(l CTX, CIS, emptyCS, BI, NRestart) := select-clauses(CTX, CIS, BI, NRestart) .
 
     sd propagate(l CTX, CIS, (C, CS), BI, NRestart) := 
-        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M =/= true /\
-        x in M =/= true /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
+        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M = false /\
+        x in M = false /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
         CIS' := (CIS x -> C) /\ y := ~(x) 
         by Seq using
         ((WUpdateClause[C <- C, WC <- WC] ; propagate(l CTX, CIS, CS, BI, NRestart)) or-else 
