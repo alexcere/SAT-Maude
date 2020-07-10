@@ -13,7 +13,7 @@ fmod SCORED-HEURISTIC is
   sort ScorePair ScorePairList .
   subsort ScorePair < ScorePairList .
 
-  op emptySPL : -> ScorePairList .
+  op emptySPL : -> ScorePairList [ctor] .
   
   op _:|_ : Literal Float -> ScorePair [ctor prec 20].
   op _,_ : ScorePairList  ScorePairList -> ScorePairList [ctor assoc id: emptySPL prec 30] .

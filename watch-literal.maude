@@ -11,7 +11,7 @@ fmod WATCH-LITERAL is protecting LOGIC .
   subsort WatchedClause < WatchedClauseSet .
   subsort WatchedSequent < Sequent .
      
-  op emptyWCS : -> WatchedClauseSet .
+  op emptyWCS : -> WatchedClauseSet [ctor] .
 
   op _:_ : Clause Clause -> WatchedClause [ctor prec 25] .
   op _,_ : WatchedClauseSet WatchedClauseSet -> WatchedClauseSet [ctor assoc id: emptyWCS prec 30] .

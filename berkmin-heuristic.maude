@@ -34,17 +34,18 @@ fmod BERKMIN-INFO is
 
   subsort ClauseScore < ClauseScoreList .
 
-  op emptyCSL : -> ClauseScoreList .
-  op failUpdateBerkminInfo : -> BerkminInfo .
+  op emptyCSL : -> ClauseScoreList [ctor] .
+  op failUpdateBerkminInfo : -> BerkminInfo [ctor] .
   
-  op _:>_ : Clause Nat -> ClauseScore [prec 20] .
-  op _,_ : ClauseScoreList ClauseScoreList -> ClauseScoreList [assoc id: emptyCSL prec 30] .
+  op _:>_ : Clause Nat -> ClauseScore [ctor prec 20] .
+  op _,_ : ClauseScoreList ClauseScoreList -> ClauseScoreList [ctor assoc id: emptyCSL prec 30] .
 
   *** var_activity, lit_activity, nb_two, size of initial ClauseSet,
   *** size of learned clauses so far, current top clause, current top clause position 
   *** clause_activity, activity threshold
 
-  op <_,_,_,_,_,_,_,_,_> : ScorePairList ScorePairList ScorePairList Nat Nat Clause Nat ClauseScoreList Nat -> BerkminInfo .
+  op <_,_,_,_,_,_,_,_,_> : ScorePairList ScorePairList ScorePairList Nat Nat Clause 
+    Nat ClauseScoreList Nat -> BerkminInfo [ctor] .
   
   var N N1 N2 N3 NInitial ActualClauseIdx NActivityThreshold : Nat .
   var F F1 F2 Limit : Float .

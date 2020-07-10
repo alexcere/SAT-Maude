@@ -15,7 +15,7 @@ fmod UNIQUE-IMPLICATION-POINT is protecting LOGIC .
      sorts ConflictInfo ConflictInfoSet .
      subsort ConflictInfo < ConflictInfoSet .
 
-     op emptyCIS : -> ConflictInfoSet .
+     op emptyCIS : -> ConflictInfoSet [ctor] .
 
      op _->_ : Literal Clause -> ConflictInfo [ctor prec 22] .
      op __ : ConflictInfoSet ConflictInfoSet -> ConflictInfoSet [ctor assoc id: emptyCIS prec 30] .
