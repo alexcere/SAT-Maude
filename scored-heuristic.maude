@@ -39,10 +39,10 @@ fmod SCORED-HEURISTIC is
   op insertScorePair : ScorePair ScorePairList -> ScorePairList .
 
   eq insertScorePair(l :| N, emptySPL) = l :| N .
-  ceq insertScorePair(l :| N, (l1 :| N1 , SPL1)) = l :| N , l1 :| N1 , SPL1 if N1 <= N .
+  ceq insertScorePair(l :| N, (l1 :| N1 , SPL1)) = l :| N , l1 :| N1 , SPL1 if N1 < N .
   ceq insertScorePair(l :| N, (SPL1 , l1 :| N1) ) = SPL1 , l1 :| N1 , l :| N if N <= N1 .
   ceq insertScorePair(l :| N, (SPL1, l1 :| N1 , l2 :| N2, SPL2)) = SPL1 , l1 :| N1, l :| N, l2 :| N2, SPL2 if
-    N <= N1 /\ N2 <= N .
+    N <= N1 /\ N2 < N .
 
   op modifyScore : Literal Float ScorePairList -> ScorePairList .
 
