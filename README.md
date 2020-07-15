@@ -1,5 +1,4 @@
 # SAT-Maude
-=====
 
 SAT-Maude is a program written entirely in Maude to study and compare 
 different techniques and heuristics in modern SAT solvers.
@@ -20,7 +19,7 @@ This project contains 6 different strategies:
 
 More details in how these strategies work will be included in a near future.
 
-## Installation (Ubuntu)
+## Installation
 
 ### 1. Download Core Maude 3.0
 
@@ -38,7 +37,7 @@ Maude-executable < ../examples/example.txt
 ```
 
 For instance, if Maude executable is found in `../../Maude-3.0+yices2-linux/maude-Yices2.linux64` and
-we want to execute example vsids-unsat.txt in *examples* folder, then we use the following command:
+we want to execute example `../examples/vsids-unsat.txt`, then we use the following command:
 
 ```
 ../../Maude-3.0+yices2-linux/maude-Yices2.linux64 < ../examples/vsids-unsat.txt 
@@ -47,7 +46,7 @@ we want to execute example vsids-unsat.txt in *examples* folder, then we use the
 ## Generate Maude instances
 
 You can generate your own instances to analyze in Maude using executable file in
-*parser* folder. This instances must follow [DIMACS CNF format](https://www.domagoj-babic.com/uploads/ResearchProjects/Spear/dimacs-cnf.pdf).
+*parser* folder. These instances must follow [DIMACS CNF format](https://www.domagoj-babic.com/uploads/ResearchProjects/Spear/dimacs-cnf.pdf).
 
 This executable must be called with three arguments: file that contains
 the strategy, module that contains strategy call and name of strategy call. There are
@@ -65,7 +64,8 @@ six different possibilities for this arguments:
 
 6. *Berkmin Solver*: berkmin-strat BERKMIN-STRATEGY berkmin-strat
 
-For instance, if we want to generate Maude file berkmin-20-01.txt from instance uf20-01.cnf in `../instances/sat` folder
+For instance, if we want to generate Maude file `../examples/berkmin-20-01.txt` from instance 
+in `../instances/sat/uf20-01.cnf` folder
 using *Berkmin Solver* strategy, we use the following command in folder *tools*:
 
 ``` 
