@@ -1,6 +1,5 @@
 # SAT-Maude
 =====
-[![License: GPL v3][license-badge]][license-badge-url]
 
 SAT-Maude is a program written entirely in Maude to study and compare 
 different techniques and heuristics in modern SAT solvers.
@@ -41,7 +40,9 @@ Maude-executable < ../examples/example.txt
 For instance, if Maude executable is found in `../../Maude-3.0+yices2-linux/maude-Yices2.linux64` and
 we want to execute example vsids-unsat.txt in *examples* folder, then we use the following command:
 
+```
 ../../Maude-3.0+yices2-linux/maude-Yices2.linux64 < ../examples/vsids-unsat.txt 
+```
 
 ## Generate Maude instances
 
@@ -64,7 +65,7 @@ six different possibilities for this arguments:
 
 6. *Berkmin Solver*: berkmin-strat BERKMIN-STRATEGY berkmin-strat
 
-For instance, if we want to generate Maude file berkmin-20-01.txt from instance uf20-01.cnf in ../instances/sat folder
+For instance, if we want to generate Maude file berkmin-20-01.txt from instance uf20-01.cnf in `../instances/sat` folder
 using *Berkmin Solver* strategy, we use the following command in folder *tools*:
 
 ``` 
