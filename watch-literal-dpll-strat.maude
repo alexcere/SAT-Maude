@@ -21,8 +21,8 @@ smod WATCH-LITERAL-DPLL-STRATEGY is
     var CS : ClauseSet .
     var WC WC' : WatchedClause .
     var WCS WCS' : WatchedClauseSet .
-    var Seq : WatchedSequent .
-    var Seq' : BasicSequent .
+    var WatchedSeq : WatchedSequent .
+    var BasicSeq : BasicSequent .
     var CIS CIS' : ConflictInfoSet .
 
     strat watch-literal-dpll-strat :   @ BasicSequent .
@@ -35,28 +35,28 @@ smod WATCH-LITERAL-DPLL-STRATEGY is
     strat convert-watch-literal : ScorePairList @ BasicSequent .
 
     sd fail-branch(l, l, CIS, LiteralSet) := 
-        WBackjump2[l <- l] ? matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ? matchrew WatchedSeq s.t. (M x || WCS) := WatchedSeq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
-        by Seq using select-clauses(y, CIS', LiteralSet) : WFail .
+        by WatchedSeq using select-clauses(y, CIS', LiteralSet) : WFail .
 
     sd fail-branch(l, C, CIS, LiteralSet) :=  (WBackjump1[l <- l, C <- C] or-else 
         WBackjump2[l <- l]) ? (WLearn[C <- C] ; 
-        matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        matchrew WatchedSeq s.t. (M x || WCS) := WatchedSeq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, C) 
-        by Seq using select-clauses(y, CIS', LiteralSet)) : WFail .
+        by WatchedSeq using select-clauses(y, CIS', LiteralSet)) : WFail .
 
-    sd generate-failure-info(CIS, C, LiteralSet) := matchrew Seq s.t. (M || WCS) := Seq 
+    sd generate-failure-info(CIS, C, LiteralSet) := matchrew WatchedSeq s.t. (M || WCS) := WatchedSeq 
         /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
         /\ C' :=  obtainBackjumpClause(CIS', C) /\ l := obtainNegatedUIP(CIS', C')  
-        by Seq using (fail-branch(l, C', CIS, LiteralSet)) .
+        by WatchedSeq using (fail-branch(l, C', CIS, LiteralSet)) .
   
     sd propagate(l CTX, CIS, emptyCS, LiteralSet) := select-clauses(CTX, CIS, LiteralSet) .
 
     sd propagate(l CTX, CIS, (C, CS), LiteralSet) := 
-        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M = false /\
+        (matchrew WatchedSeq s.t. M || WCS, (l \/ x) : C , WCS' := WatchedSeq /\  l in M = false /\
         x in M = false /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
         CIS' := (CIS x -> C) /\ y := ~(x) 
-        by Seq using
+        by WatchedSeq using
         ((WUpdateClause[C <- C, WC <- WC] ; propagate(l CTX, CIS, CS, LiteralSet)) or-else 
         (WUnitPropagate[x <- x] ; propagate(l CTX y, CIS', CS, LiteralSet)) or-else 
         generate-failure-info(CIS, C, LiteralSet) )) 
@@ -64,19 +64,19 @@ smod WATCH-LITERAL-DPLL-STRATEGY is
 
     sd select-clauses(emptyCTX, CIS, LiteralSet) := success-branch(CIS, LiteralSet) .
 
-    sd select-clauses(l CTX, CIS, LiteralSet) := (matchrew Seq s.t. 
-        M || WCS := Seq /\ CS := obtainCandidateClauses(l, WCS) 
-        by Seq using propagate(l CTX, CIS, CS, LiteralSet)) .
+    sd select-clauses(l CTX, CIS, LiteralSet) := (matchrew WatchedSeq s.t. 
+        M || WCS := WatchedSeq /\ CS := obtainCandidateClauses(l, WCS) 
+        by WatchedSeq using propagate(l CTX, CIS, CS, LiteralSet)) .
         
     sd decide-literal(l :| F , LiteralSet) := WDecide[l <- l] or-else decide-literal(LiteralSet) .
 
     sd success-branch(CIS, LiteralSet) := decide-literal(LiteralSet) ? 
-        matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 
-        /\ x := ~(l) by Seq using (select-clauses(x, CIS', LiteralSet)) : idle .
+        matchrew WatchedSeq s.t. (M d(l) || WCS) := WatchedSeq /\ CIS' := (CIS l -> []) 
+        /\ x := ~(l) by WatchedSeq using (select-clauses(x, CIS', LiteralSet)) : idle .
 
     sd convert-watch-literal(LiteralSet) := PreprocessClauseSet ; success-branch(emptyCIS, LiteralSet) .
 
-    sd watch-literal-dpll-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
-        LiteralSet := obtainInitialScoreList(CS) by Seq' using convert-watch-literal(LiteralSet) .
+    sd watch-literal-dpll-strat := WPureLiteral ! ; matchrew BasicSeq s.t. (M || CS) := BasicSeq /\ 
+        LiteralSet := obtainInitialScoreList(CS) by BasicSeq using convert-watch-literal(LiteralSet) .
      
 endsm

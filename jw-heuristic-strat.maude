@@ -13,11 +13,11 @@ smod JW-HEURISTIC-STRATEGY is
     var M : Context .
     var LiteralSet : ScorePairList .
     var CS : ClauseSet .
-    var Seq : BasicSequent .
+    var BasicSeq : BasicSequent .
 
     strat jw-heuristic-strat :   @ BasicSequent .
 
-    sd jw-heuristic-strat := WPureLiteral ! ; matchrew Seq s.t. (M || CS) := Seq /\ 
-        LiteralSet := JWHeuristic(CS) by Seq using convert-watch-literal(LiteralSet) .
+    sd jw-heuristic-strat := WPureLiteral ! ; matchrew BasicSeq s.t. (M || CS) := BasicSeq /\ 
+        LiteralSet := JWHeuristic(CS) by BasicSeq using convert-watch-literal(LiteralSet) .
      
 endsm

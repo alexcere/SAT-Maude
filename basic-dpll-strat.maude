@@ -13,7 +13,7 @@ smod BASIC-DPLL-STRATEGY is
     var l x : Literal .
     var C C' : Clause .
     var CS CS' : ClauseSet .
-    var Seq Seq' : BasicSequent .
+    var BasicSeq : BasicSequent .
     var M CTX N : Context .
     var CIS CIS' : ConflictInfoSet .
 
@@ -23,19 +23,19 @@ smod BASIC-DPLL-STRATEGY is
 
     sd fail-branch(l, C, C', CIS) :=  (Backjump1[l <- l, C <- C, C' <- C'] |
         Backjump2[C <- C, l <- l, C' <- C']) ? (Learn[C <- C'] ; 
-        matchrew Seq s.t. (M || CS) := Seq /\ CIS' := generateConflictInfoSetFromBackjump(M, CIS, C') 
-        by Seq using propagate(CIS')) : Fail .
+        matchrew BasicSeq s.t. (M || CS) := BasicSeq /\ CIS' := generateConflictInfoSetFromBackjump(M, CIS, C') 
+        by BasicSeq using propagate(CIS')) : Fail .
 
-    sd decide-if-fails(CIS) := matchrew Seq s.t. (M || C, CS) := Seq  /\ (M |= C == false)
+    sd decide-if-fails(CIS) := matchrew BasicSeq s.t. (M || C, CS) := BasicSeq  /\ (M |= C == false)
         /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
         /\ C' :=  obtainBackjumpClause(CIS', C) /\ l := obtainNegatedUIP(CIS', C')  
-        by Seq using (fail-branch(l, C, C', CIS)) or-else success-branch(CIS) .
+        by BasicSeq using (fail-branch(l, C, C', CIS)) or-else success-branch(CIS) .
 
-    sd propagate(CIS) := (matchrew Seq s.t. CTX || (l \/ C), CS := Seq 
+    sd propagate(CIS) := (matchrew BasicSeq s.t. CTX || (l \/ C), CS := BasicSeq 
         /\ CTX |= C == false /\ definedLiteral(l, CTX) = false /\  CIS' := CIS l -> (l \/ C) 
-        by Seq using (UnitPropagate[l <- l, C <- C]; propagate(CIS'))) or-else decide-if-fails(CIS) [label pro] .
+        by BasicSeq using (UnitPropagate[l <- l, C <- C]; propagate(CIS'))) or-else decide-if-fails(CIS) [label pro] .
 
-    sd success-branch(CIS) := one(Decide) ? matchrew Seq' s.t. (N d(l) || CS) := Seq' /\ CIS' := (CIS l -> []) by Seq'
+    sd success-branch(CIS) := one(Decide) ? matchrew BasicSeq s.t. (N d(l) || CS) := BasicSeq /\ CIS' := (CIS l -> []) by BasicSeq
         using (propagate(CIS')) : idle .
 
     sd basic-dpll-strat := PureLiteral ! ; propagate(emptyCIS) .

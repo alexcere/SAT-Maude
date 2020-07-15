@@ -23,8 +23,8 @@ smod VSIDS-HEURISTIC-STRATEGY is
     var CS : ClauseSet .
     var WC WC' : WatchedClause .
     var WCS WCS' : WatchedClauseSet .
-    var Seq : WatchedSequent .
-    var Seq' : BasicSequent .
+    var WatchedSeq : WatchedSequent .
+    var BasicSeq : BasicSequent .
     var CIS CIS' : ConflictInfoSet .
 
     strat vsids-heuristic-strat :  @ BasicSequent .
@@ -37,32 +37,32 @@ smod VSIDS-HEURISTIC-STRATEGY is
     strat convert-watch-literal : ScorePairList @ BasicSequent .
 
     sd fail-branch(l, l, CIS, CurrentLiterals, ScoredLiterals, N) := 
-        WBackjump2[l <- l] ? matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ? matchrew WatchedSeq s.t. (M x || WCS) := WatchedSeq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
-        by Seq using select-clauses(y, CIS', ScoredLiterals, ScoredLiterals, N) : WFail .
+        by WatchedSeq using select-clauses(y, CIS', ScoredLiterals, ScoredLiterals, N) : WFail .
 
     sd fail-branch(l, C, CIS, CurrentLiterals, ScoredLiterals, N) :=  
         (WBackjump1[l <- l, C <- C] or-else 
         WBackjump2[l <- l]) ? (WLearn[C <- C] ; 
-        matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        matchrew WatchedSeq s.t. (M x || WCS) := WatchedSeq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, C) 
-        /\ NewScoredLiterals := updateClauseScore(C, ScoredLiterals, 1.0) by Seq using 
+        /\ NewScoredLiterals := updateClauseScore(C, ScoredLiterals, 1.0) by WatchedSeq using 
         select-clauses(y, CIS', NewScoredLiterals, NewScoredLiterals, N)) : WFail .
 
     sd generate-failure-info(CIS, C, CurrentLiterals, ScoredLiterals, N) 
-        := matchrew Seq s.t. (M || WCS) := Seq 
+        := matchrew WatchedSeq s.t. (M || WCS) := WatchedSeq 
         /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
         /\ C' :=  obtainBackjumpClause(CIS', C) /\ l := obtainNegatedUIP(CIS', C')  
-        by Seq using (fail-branch(l, C', CIS, CurrentLiterals, ScoredLiterals, N)) .
+        by WatchedSeq using (fail-branch(l, C', CIS, CurrentLiterals, ScoredLiterals, N)) .
   
     sd propagate(l CTX, CIS, emptyCS, CurrentLiterals, ScoredLiterals, N) := 
         select-clauses(CTX, CIS, CurrentLiterals, ScoredLiterals, N) .
 
     sd propagate(l CTX, CIS, (C, CS), CurrentLiterals, ScoredLiterals, N) := 
-        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M = false /\
+        (matchrew WatchedSeq s.t. M || WCS, (l \/ x) : C , WCS' := WatchedSeq /\  l in M = false /\
         x in M = false /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
         CIS' := (CIS x -> C) /\ y := ~(x) 
-        by Seq using
+        by WatchedSeq using
         ((WUpdateClause[C <- C, WC <- WC] ; 
         propagate(l CTX, CIS, CS, CurrentLiterals, ScoredLiterals, N)) 
         or-else (WUnitPropagate[x <- x] ; 
@@ -74,12 +74,12 @@ smod VSIDS-HEURISTIC-STRATEGY is
         decide-literal(CIS, CurrentLiterals, ScoredLiterals, N) .
 
     sd select-clauses(l CTX, CIS, CurrentLiterals, ScoredLiterals, N) := 
-        matchrew Seq s.t. M || WCS := Seq /\ CS := obtainCandidateClauses(l, WCS) 
-        by Seq using propagate(l CTX, CIS, CS, CurrentLiterals, ScoredLiterals, N) .
+        matchrew WatchedSeq s.t. M || WCS := WatchedSeq /\ CS := obtainCandidateClauses(l, WCS) 
+        by WatchedSeq using propagate(l CTX, CIS, CS, CurrentLiterals, ScoredLiterals, N) .
     
     sd decide-if-sum-decay(CIS, CurrentLiterals, ScoredLiterals, 100) :=
-        matchrew Seq s.t. M || WCS := Seq /\ NewScoredLiterals := decaySum(ScoredLiterals)
-        by Seq using success-branch(CIS, NewScoredLiterals, NewScoredLiterals, 0) .
+        matchrew WatchedSeq s.t. M || WCS := WatchedSeq /\ NewScoredLiterals := decaySum(ScoredLiterals)
+        by WatchedSeq using success-branch(CIS, NewScoredLiterals, NewScoredLiterals, 0) .
         
     csd decide-if-sum-decay(CIS, CurrentLiterals, ScoredLiterals, N) :=
         success-branch(CIS, CurrentLiterals, ScoredLiterals, N + 1) if N < 100 . 
@@ -91,15 +91,15 @@ smod VSIDS-HEURISTIC-STRATEGY is
         decide-literal(CIS, CurrentLiterals, ScoredLiterals, N) .
 
     sd success-branch(CIS, CurrentLiterals, ScoredLiterals, N) :=  
-        matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) /\ x := ~(l) 
-        by Seq using 
+        matchrew WatchedSeq s.t. (M d(l) || WCS) := WatchedSeq /\ CIS' := (CIS l -> []) /\ x := ~(l) 
+        by WatchedSeq using 
         select-clauses(x, CIS', CurrentLiterals, ScoredLiterals, N) .
 
     sd convert-watch-literal(ScoredLiterals) := PreprocessClauseSet ; 
         decide-literal(emptyCIS, ScoredLiterals, ScoredLiterals, 0) .
 
-    sd vsids-heuristic-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
+    sd vsids-heuristic-strat := WPureLiteral ! ; matchrew BasicSeq s.t. (M || CS) := BasicSeq /\ 
         ScoredLiterals := initializeVSIDS(CS)  
-        by Seq' using convert-watch-literal(ScoredLiterals) .
+        by BasicSeq using convert-watch-literal(ScoredLiterals) .
      
 endsm

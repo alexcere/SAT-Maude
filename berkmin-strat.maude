@@ -22,8 +22,8 @@ smod BERKMIN-STRATEGY is
     var CS : ClauseSet .
     var WC WC' : WatchedClause .
     var WCS WCS' : WatchedClauseSet .
-    var Seq : WatchedSequent .
-    var Seq' : BasicSequent .
+    var WatchedSeq : WatchedSequent .
+    var BasicSeq : BasicSequent .
     var CIS CIS' : ConflictInfoSet .
     var RestartInfo : Pair{WatchedClauseSet, BerkminInfo} .
 
@@ -39,9 +39,9 @@ smod BERKMIN-STRATEGY is
 
     
     sd decide-if-restart(l, CIS, BI, 150) := 
-        WRestart ; matchrew Seq s.t. (M || WCS) := Seq /\ RestartInfo := restartTree(BI, M, WCS) /\
+        WRestart ; matchrew WatchedSeq s.t. (M || WCS) := WatchedSeq /\ RestartInfo := restartTree(BI, M, WCS) /\
         WCS' := 1st(RestartInfo) /\ BI' := 2nd(RestartInfo) /\
-        CIS' := generateConflictInfoSetFromBackjump(M, CIS, l) by Seq using 
+        CIS' := generateConflictInfoSetFromBackjump(M, CIS, l) by WatchedSeq using 
         ( WChangeWatchedClauseSet[WCS' <- WCS'] ; decide-literal(CIS', BI', 1) ) .
 
     csd decide-if-restart(l, CIS, BI, NRestart) := 
@@ -55,32 +55,32 @@ smod BERKMIN-STRATEGY is
     *** a different function, as we don't have to count that we have learnt a clause. Besides,
     *** we don't add one to NRestart, as we don't consider this to be a learnt clause.
     sd fail-branch(l, l, ConflictClause, CIS, BI, NRestart) := 
-        WBackjump2[l <- l] ? matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        WBackjump2[l <- l] ? matchrew WatchedSeq s.t. (M x || WCS) := WatchedSeq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, l)
         /\ BI' :=  updateBerkminInfoForBackjumpingOneClause(CTX, WCS, CIS, ConflictClause, l, BI)
-        by Seq using select-clauses(y, CIS', BI', NRestart) : WFail .
+        by WatchedSeq using select-clauses(y, CIS', BI', NRestart) : WFail .
 
     sd fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, NRestart) :=  
         (WBackjump1[l <- l, C <- BackjumpClause] or-else 
         WBackjump2[l <- l]) ? (WLearn[C <- BackjumpClause] ; 
-        matchrew Seq s.t. (M x || WCS) := Seq /\ CTX := M x /\ y := ~(x)
+        matchrew WatchedSeq s.t. (M x || WCS) := WatchedSeq /\ CTX := M x /\ y := ~(x)
         /\ CIS' := generateConflictInfoSetFromBackjump(CTX, CIS, BackjumpClause)
         /\ BI' :=  updateBerkminInfoForBackjumping(CTX, WCS, CIS, ConflictClause, BackjumpClause, BI)
-        by Seq using decide-if-restart(y, CIS', BI', NRestart)) : WFail .
+        by WatchedSeq using decide-if-restart(y, CIS', BI', NRestart)) : WFail .
 
-    sd generate-failure-info(CIS, ConflictClause, BI, NRestart) := matchrew Seq s.t. (M || WCS) := Seq 
+    sd generate-failure-info(CIS, ConflictClause, BI, NRestart) := matchrew WatchedSeq s.t. (M || WCS) := WatchedSeq 
         /\ CIS' :=  obtainCurrentConflictInfoSet(M, CIS)
         /\ BackjumpClause :=  obtainBackjumpClause(CIS', ConflictClause) /\ 
         l := obtainNegatedUIP(CIS', BackjumpClause)  
-        by Seq using (fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, NRestart)) .
+        by WatchedSeq using (fail-branch(l, BackjumpClause, ConflictClause, CIS, BI, NRestart)) .
   
     sd propagate(l CTX, CIS, emptyCS, BI, NRestart) := select-clauses(CTX, CIS, BI, NRestart) .
 
     sd propagate(l CTX, CIS, (C, CS), BI, NRestart) := 
-        (matchrew Seq s.t. M || WCS, (l \/ x) : C , WCS' := Seq /\  l in M = false /\
+        (matchrew WatchedSeq s.t. M || WCS, (l \/ x) : C , WCS' := WatchedSeq /\  l in M = false /\
         x in M = false /\ WC' := (l \/ x) : C /\ WC := changeRepresentative(M, l, WC') /\ 
         CIS' := (CIS x -> C) /\ y := ~(x) 
-        by Seq using
+        by WatchedSeq using
         ((WUpdateClause[C <- C, WC <- WC] ; propagate(l CTX, CIS, CS, BI, NRestart)) or-else 
         (WUnitPropagate[x <- x] ; propagate(l CTX y, CIS', CS, BI, NRestart)) or-else 
         generate-failure-info(CIS, C, BI, NRestart) )) 
@@ -88,23 +88,23 @@ smod BERKMIN-STRATEGY is
 
     sd select-clauses(emptyCTX, CIS, BI, NRestart) := decide-literal(CIS, BI, NRestart) .
 
-    sd select-clauses(l CTX, CIS, BI, NRestart) := (matchrew Seq s.t. 
-        M || WCS := Seq /\ CS := obtainCandidateClauses(l, WCS) 
-        by Seq using propagate(l CTX, CIS, CS, BI, NRestart)) .
+    sd select-clauses(l CTX, CIS, BI, NRestart) := (matchrew WatchedSeq s.t. 
+        M || WCS := WatchedSeq /\ CS := obtainCandidateClauses(l, WCS) 
+        by WatchedSeq using propagate(l CTX, CIS, CS, BI, NRestart)) .
         
-    sd decide-literal(CIS, BI, NRestart) := matchrew Seq s.t. (M || WCS) := Seq
+    sd decide-literal(CIS, BI, NRestart) := matchrew WatchedSeq s.t. (M || WCS) := WatchedSeq
         /\ BI' := changeCurrentTopClauseForDecision(M, WCS, BI)
         /\ BI' =/= failUpdateBerkminInfo
         /\ l := chooseNextDecisionLiteral(M, BI') 
-        by Seq using (WDecide[l <- l] ; success-decision(CIS, BI', NRestart)) or-else idle .
+        by WatchedSeq using (WDecide[l <- l] ; success-decision(CIS, BI', NRestart)) or-else idle .
 
-    sd success-decision(CIS, BI, NRestart) := matchrew Seq s.t. (M d(l) || WCS) := Seq /\ CIS' := (CIS l -> []) 
-        /\ x := ~(l) by Seq using (select-clauses(x, CIS', BI, NRestart)) .
+    sd success-decision(CIS, BI, NRestart) := matchrew WatchedSeq s.t. (M d(l) || WCS) := WatchedSeq /\ CIS' := (CIS l -> []) 
+        /\ x := ~(l) by WatchedSeq using (select-clauses(x, CIS', BI, NRestart)) .
 
     sd convert-watch-literal(BI) := PreprocessClauseSet ; decide-literal(emptyCIS, BI, 1) .
 
-    sd berkmin-strat := WPureLiteral ! ; matchrew Seq' s.t. (M || CS) := Seq' /\ 
+    sd berkmin-strat := WPureLiteral ! ; matchrew BasicSeq s.t. (M || CS) := BasicSeq /\ 
         BI := initializeBerkmin(CS)
-        by Seq' using convert-watch-literal(BI) .
+        by BasicSeq using convert-watch-literal(BI) .
      
 endsm
