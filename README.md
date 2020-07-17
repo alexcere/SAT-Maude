@@ -50,7 +50,7 @@ You can generate your own instances to analyze in Maude using executable file in
 
 This executable must be called with three arguments: file that contains
 the strategy, module that contains strategy call and name of strategy call. There are
-six different possibilities for this arguments:
+six different possibilities for these arguments:
 
 1. *Classic DPLL system*: classic-dpll-strat CLASSIC-DPLL-STRATEGY classic-dpll-strat
 
@@ -64,8 +64,8 @@ six different possibilities for this arguments:
 
 6. *Berkmin Solver*: berkmin-strat BERKMIN-STRATEGY berkmin-strat
 
-For instance, if we want to generate Maude file `../examples/berkmin-20-01.txt` from instance 
-in `../instances/sat/uf20-01.cnf` folder
+For instance, if we want to generate the Maude file `../examples/berkmin-20-01.txt` from instance 
+`../instances/sat/uf20-01.cnf`
 using *Berkmin Solver* strategy, we use the following command in folder *tools*:
 
 ``` 

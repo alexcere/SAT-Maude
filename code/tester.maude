@@ -10,13 +10,20 @@ sload logic
 fmod TESTER is pr LOGIC .
 
     var C : Clause .
-    var CS : ClauseSet .
+    var BasicSeq : BasicSequent .
+    var CS CS' : ClauseSet .
     var M : Context .
     var l : Literal .
 
-    op reduceBasicSequent : BasicSequent -> [Bool] .
+    op reduceBasicSequentAuxiliar : BasicSequent ClauseSet -> Bool .
 
-    eq reduceBasicSequent(M || emptyCS) = true .
-    ceq reduceBasicSequent(M || (l \/ C) , CS) = reduceBasicSequent(M || CS) if definedLiteral(l, M) = false  .
-    ceq reduceBasicSequent(M || C, CS) = reduceBasicSequent(M || CS) if M |= C [owise] .
+    eq reduceBasicSequentAuxiliar(M || emptyCS, CS') = true .
+    ceq reduceBasicSequentAuxiliar((M || (l \/ C) , CS), CS') = reduceBasicSequentAuxiliar((M || CS), CS') 
+        if (~(l) in CS') = false  .
+    ceq reduceBasicSequentAuxiliar((M || C , CS), CS') = reduceBasicSequentAuxiliar((M || CS), CS') if M |= C .
+    eq reduceBasicSequentAuxiliar(BasicSeq, CS) = false [owise] .
+
+    op reduceBasicSequent : BasicSequent -> Bool .
+
+    eq reduceBasicSequent(M || CS) = reduceBasicSequentAuxiliar((M || CS), CS) .    
 endfm
